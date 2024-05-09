@@ -2,6 +2,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <vector>
 
 namespace FracturesTraces
 {
@@ -21,8 +23,6 @@ bool ImportData(const string& filepath, DFN& data)
 
 bool ImportAll(const string &filename, DFN &data)
 {
-
-
     ifstream file;
     file.open(filename);
 
@@ -34,49 +34,53 @@ bool ImportAll(const string &filename, DFN &data)
 
     string line;
 
-
     unsigned int NFractures = 0;
-    bool end = false;
 
     istringstream convertN(line);
 
-
     getline(file, line);
     getline(file, line);
-    cout << line << endl;
     convertN.str(line);
     convertN >> NFractures;
     getline(file,line);
 
     for(unsigned int i = 0; i != NFractures; i++)
     {
+        istringstream convertN(line);
         unsigned int id;
         unsigned int vertices;
         char tmp;
-        istringstream convertN(line);
+        double coord;
+
+        vector<double> coordinates;
+        vector<vector<double>> Vertices;
 
         getline(file, line);
-        cout << line << endl;
-
+        convertN.str(line);
         convertN >> id >> tmp >> vertices;
         data.FracturesId.push_back(id);
         data.NumberVertices.push_back(vertices);
-        getline(file, line);
+        istringstream convert(line);
+
         getline(file, line);
 
-        convertN >> data.Vertices(0,0) >> data.Vertices(0,1) >> data.Vertices(0,2) >> data.Vertices(0,3);
-        getline(file, line);
+        for(unsigned int i = 0; i!=3; i++)
+        {
+            getline(file, line);
+            replace(line.begin(),line.end(), ';' ,' ');
 
-        convertN >> data.Vertices(1,0) >> data.Vertices(1,1) >> data.Vertices(1,2) >> data.Vertices(1,3);
-        getline(file, line);
+            for(unsigned int j = 0; j != vertices; j++)
+            {
+                convert >> coord;
+                coordinates.push_back(coord);
+            }
 
-        convertN >> data.Vertices(2,0) >> data.Vertices(2,1) >> data.Vertices(2,2) >> data.Vertices(2,3);
+            Vertices.push_back(coordinates);
+        }
+
         getline(file, line);
 
     }
-
-    end = true;
-
 
     return true;
 
@@ -85,15 +89,3 @@ bool ImportAll(const string &filename, DFN &data)
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-

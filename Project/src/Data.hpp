@@ -12,7 +12,7 @@ struct DFN
     unsigned int NumberFractures = {};
     vector<unsigned int> FracturesId = {};
     vector<unsigned int> NumberVertices = {};
-    map<unsigned int, Matrix<double, 3, 4>> Vertices ={};
+    map<unsigned int, vector<vector<double>>> Vertices ={};
 
 
     unsigned int NumberTraces = 0;
