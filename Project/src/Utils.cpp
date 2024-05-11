@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+
 namespace FracturesTraces
 {
 
@@ -69,11 +70,11 @@ bool ImportAll(const string &filename, DFN &data)
             getline(file, line);
             replace(line.begin(),line.end(), ';' ,' ');
 
-            for(unsigned int j = 0; j != vertices; j++)
+            for(unsigned int j = 0; j != vertices; j++)  // il problema è qui
             {
-                convert >> coord;
-                coordinates.push_back(coord);
-            }
+                convert >> coord;                        //
+                coordinates.push_back(coord);            //
+            }                                            //
 
             Vertices.push_back(coordinates);
         }

@@ -13,3 +13,4 @@ bool ImportData(const string &filepath, DFN& data);
 bool ImportAll(const string &filename, DFN& data);
 
 }
+
