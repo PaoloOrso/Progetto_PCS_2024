@@ -51,7 +51,7 @@ bool ImportAll(const string &filename, DFN &data)
         unsigned int id;
         unsigned int vertices;
         char tmp;
-        double coord;
+        double coord; // commento a caso
 
         vector<double> coordinates;
         vector<vector<double>> Vertices;
