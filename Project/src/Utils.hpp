@@ -12,5 +12,10 @@ bool ImportData(const string &filepath, DFN& data);
 
 bool ImportAll(const string &filename, DFN& data);
 
+// vector<double> calcolaBaricentro(const vector<vector<double>>& vertici);
+
+
+bool TestSfera(DFN &data);
+
 }
 

@@ -18,7 +18,7 @@ struct DFN
     unsigned int NumberTraces = 0;
     vector<unsigned int> TracesId = {};
     map<unsigned int, vector<unsigned int>> GeneratingFractures = {};
-    map<unsigned int, Matrix<double, 3,4>> GeneratingVertices = {};
+    map<unsigned int, vector<vector<double>>> GeneratingVertices = {};
 
     vector<bool> Tips = {};
     vector<double> LenghtTraces = {};
