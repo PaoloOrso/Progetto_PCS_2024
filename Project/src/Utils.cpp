@@ -10,6 +10,7 @@
 namespace FracturesTraces
 {
 
+//---------------------------------------------------------------CONTROLLO-GENERICO--------------------------------------------------------------------------------
 
 bool ImportData(const string& filepath, DFN& data)
 {
@@ -17,11 +18,20 @@ bool ImportData(const string& filepath, DFN& data)
     {
         return false;
     }
-    else
+
+
+
+    if(!Baricentri(data))
     {
-        return true;
+        return false;
     }
+
+
+    return true;
 }
+
+
+//-------------------------------------------------INIZIALIZZO-LA-MAPPA-CHE-ASSOCIA-ID-A-UN-VETTORE-DI-VETTORI-CHE-DEFINISCE-LE-COORDINATE-------------------------
 
 bool ImportAll(const string &filename, DFN &data)
 {
@@ -34,116 +44,118 @@ bool ImportAll(const string &filename, DFN &data)
         return false;
     }
 
-    // string line;
+    string line;
 
-    // unsigned int NFractures = 0;
+    unsigned int NFractures = 0;
 
-    // istringstream convertN(line);
+    istringstream convertN(line);
 
-    // getline(file, line);
-    // getline(file, line);
-    // convertN.str(line);
-    // convertN >> NFractures;
-    // getline(file,line);
+    getline(file, line);
+    getline(file, line);
+    convertN.str(line);
+    convertN >> NFractures;
+    getline(file,line);
 
-    // for(unsigned int i = 0; i != NFractures; i++)
-    // {
-    //     istringstream convertN(line);
-    //     unsigned int id;
-    //     unsigned int vertices;
-    //     char tmp;
-    //     double coord;
+    for(unsigned int i = 0; i != NFractures; i++)
+    {
+        istringstream convertN(line);
+        unsigned int id;
+        unsigned int vertices;
+        char tmp;
+        double coord;
 
-    //     vector<double> coordinates;
-    //     vector<vector<double>> Vertices;
+        vector<double> coordinates;
+        vector<vector<double>> Vertices;
 
-    //     getline(file, line);
-    //     convertN.str(line);
-    //     convertN >> id >> tmp >> vertices;
-    //     data.FracturesId.push_back(id);
-    //     data.NumberVertices.push_back(vertices);
+        getline(file, line);
+        convertN.str(line);
+        convertN >> id >> tmp >> vertices;
+        data.FracturesId.push_back(id);
+        data.NumberVertices.push_back(vertices);
 
+        getline(file, line);
 
-    //     getline(file, line);
+        for(unsigned int i = 0; i!=3; i++)
+        {
+            getline(file, line);
+            replace(line.begin(),line.end(), ';' ,' ');
+            istringstream convert(line);
 
-    //     for(unsigned int i = 0; i!=3; i++)
-    //     {
-    //         getline(file, line);
-    //         replace(line.begin(),line.end(), ';' ,' ');
+            for(unsigned int j = 0; j != vertices; j++)
+            {
+                convert >> coord;
+                //cout << coord << ' ';                             // STAMPO LE COORDINATE COME CONTROLLO
+                coordinates.push_back(coord);
 
+            }
+            Vertices.push_back(coordinates);
+            coordinates = {};
+            //cout << endl;                                         // STAMPO LE COORDINATE COME CONTROLLO
+        }
 
-    //         for(unsigned int j = 0; j != vertices; j++)  // il problema è qui
-    //         {
-    //             istringstream convert(line);
-    //             convert >> coord;                         //
-    //             cout << coord << endl;
-    //             coordinates.push_back(coord);            //
-    //         }                                            //
+        data.Vertices.insert({id,Vertices});
 
-    //         Vertices.push_back(coordinates);
-    //     }
+        getline(file, line);
 
-
-
-    //     getline(file, line);
-
-    vector<vector<double>> vettore1 = {{0.0,0.0,0.0},{1.0,0.0,0.0},{1.0,1.0,0.0},{0.0,1.0,0.0}};
-    data.Vertices.insert({0,vettore1});
-    vector<vector<double>> vettore2 = {{0.8,0.0,-0.1},{0.8,0.0,0.3},{0.8,1.0,0.3},{0.8,1.0,-0.1}};
-    data.Vertices.insert({1,vettore2});
-    vector<vector<double>> vettore3 = {{-0.238,0.5,-0.344},{0.301,0.5,-0.344},{0.316,0.5,0.453},{-0.238,0.5,0.453}};
-    data.Vertices.insert({2,vettore3});
+    }
 
     return true;
 
 }
 
-bool TestSfera(DFN &data)
+//-------------------------------------------------------TEST-DELLA-SFERA-E-DEL-BARICENTRO------------------------------------------------------------------------
+
+bool Baricentri(DFN &data)
 
 {
 
-    double x_bari = 0.0;
-    double y_bari = 0.0;
-    double z_bari = 0.0;
-    double tmpx = 0.0;
-    double tmpy = 0.0;
-    double tmpz = 0.0;
-    vector<double> tmp_bari = {};
-
-    for(unsigned int i = 0; i != 4; i++)
+    for(unsigned int id = 0; id != 3; id++)
     {
-        tmpx += data.Vertices[0][i][0];
-        cout << tmpx << endl;
+        double x_bari = 0.0;
+        double y_bari = 0.0;
+        double z_bari = 0.0;
+        double tmpx = 0.0;
+        double tmpy = 0.0;
+        double tmpz = 0.0;
+        vector<double> tmp_bari = {};
+
+        for(unsigned int i = 0; i != 4; i++)
+        {
+            tmpx += data.Vertices[id][0][i];
+            //cout << "x " << tmpx << endl;
+
+        }
+
+        x_bari = tmpx / 4;
+        //cout << fixed << setprecision(6) << "barix " << x_bari << endl;
+
+
+        for(unsigned int i = 0; i != 4; i++ )
+        {
+            tmpy += data.Vertices[id][1][i];
+            //cout << "y " << tmpy << endl;
+        }
+
+        y_bari = tmpy / 4;
+        //cout << fixed << setprecision(6) << "bariy " <<  y_bari << endl;
+
+
+        for(unsigned int i = 0; i != 4; i++ )
+        {
+            tmpz += data.Vertices[id][2][i];
+            //cout << "z " << tmpz << endl;
+        }
+
+        z_bari = tmpz / 4;
+        //cout << fixed << setprecision(6) << "bariz " << z_bari<< endl;
+
+        tmp_bari.push_back(x_bari);
+        tmp_bari.push_back(y_bari);
+        tmp_bari.push_back(z_bari);
+
+        data.Baricentri.insert({id,tmp_bari});
 
     }
-
-    x_bari = tmpx / 4;
-    cout << x_bari;
-
-
-    for(unsigned int i = 0; i != 4; i++ )
-    {
-        tmpy += data.Vertices[0][i][1];
-        cout << tmpy << endl;
-    }
-
-    y_bari = tmpy / 4;
-    cout << fixed << setprecision(6) << y_bari;
-
-
-    for(unsigned int i = 0; i != 4; i++ )
-    {
-        tmpz += data.Vertices[0][i][2];
-        cout << tmpz << endl;
-    }
-
-    z_bari = tmpz / 4;
-    cout << fixed << setprecision(6) << z_bari;
-
-
-    tmp_bari.push_back(x_bari);
-    tmp_bari.push_back(y_bari);
-    tmp_bari.push_back(z_bari);
 
     return true;
 

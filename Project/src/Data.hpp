@@ -20,6 +20,10 @@ struct DFN
     map<unsigned int, vector<unsigned int>> GeneratingFractures = {};
     map<unsigned int, vector<vector<double>>> GeneratingVertices = {};
 
+
+    map<unsigned int, vector<double>> Baricentri = {};
+
+
     vector<bool> Tips = {};
     vector<double> LenghtTraces = {};
 
