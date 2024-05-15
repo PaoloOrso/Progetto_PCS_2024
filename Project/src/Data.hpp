@@ -14,6 +14,7 @@ struct DFN
     vector<unsigned int> NumberVertices = {};
     map<unsigned int, vector<vector<double>>> Vertices ={};
 
+    map<unsigned int, double> raggi = {};
 
     unsigned int NumberTraces = 0;
     vector<unsigned int> TracesId = {};

@@ -44,6 +44,11 @@ list(APPEND ${CMAKE_PROJECT_NAME}_sources ${src_sources})
 list(APPEND ${CMAKE_PROJECT_NAME}_headers ${src_headers})
 list(APPEND ${CMAKE_PROJECT_NAME}_includes ${src_includes})
 
+#file copy
+#############################################################################
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/DFN/FR3_data.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+
 # Create executable
 ################################################################################
 add_executable(${PROJECT_NAME}

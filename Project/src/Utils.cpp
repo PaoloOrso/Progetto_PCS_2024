@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <iomanip>
+#include <cmath>
 
 
 namespace FracturesTraces
@@ -12,24 +13,24 @@ namespace FracturesTraces
 
 //---------------------------------------------------------------CONTROLLO-GENERICO--------------------------------------------------------------------------------
 
-bool ImportData(const string& filepath, DFN& data)
+bool ImportData(DFN& data)
 {
-    if(!ImportAll(filepath + "/FR3_data.txt", data))
+    if(!ImportAll("./FR3_data.txt", data))
     {
         return false;
     }
 
 
 
-    if(!Baricentri(data))
+    if(!Testsfera(data))
     {
-        return false;
+       return false;
     }
-
 
     return true;
-}
 
+
+}
 
 //-------------------------------------------------INIZIALIZZO-LA-MAPPA-CHE-ASSOCIA-ID-A-UN-VETTORE-DI-VETTORI-CHE-DEFINISCE-LE-COORDINATE-------------------------
 
@@ -62,9 +63,16 @@ bool ImportAll(const string &filename, DFN &data)
         unsigned int id;
         unsigned int vertices;
         char tmp;
-        double coord;
+        double coordx;
+        double coordy;
+        double coordz;
 
-        vector<double> coordinates;
+        vector<double> coordinatesx;
+        vector<double> coordinatesy;
+        vector<double> coordinatesz;
+
+        vector<double> vert;
+
         vector<vector<double>> Vertices;
 
         getline(file, line);
@@ -75,22 +83,58 @@ bool ImportAll(const string &filename, DFN &data)
 
         getline(file, line);
 
-        for(unsigned int i = 0; i!=3; i++)
+
+
+
+        getline(file, line);
+        replace(line.begin(),line.end(), ';' ,' ');
+        istringstream convert1(line);
+
+        for(unsigned int j = 0; j != vertices; j++)
         {
-            getline(file, line);
-            replace(line.begin(),line.end(), ';' ,' ');
-            istringstream convert(line);
 
-            for(unsigned int j = 0; j != vertices; j++)
-            {
-                convert >> coord;
-                //cout << coord << ' ';                             // STAMPO LE COORDINATE COME CONTROLLO
-                coordinates.push_back(coord);
+            convert1 >> coordx;
+            coordinatesx.push_back(coordx);
 
-            }
-            Vertices.push_back(coordinates);
-            coordinates = {};
-            //cout << endl;                                         // STAMPO LE COORDINATE COME CONTROLLO
+        }
+
+        getline(file, line);
+        replace(line.begin(),line.end(), ';' ,' ');
+        istringstream convert2(line);
+
+
+        for(unsigned int j = 0; j != vertices; j++)
+        {
+
+            convert2 >> coordy;
+            coordinatesy.push_back(coordy);
+
+        }
+
+        getline(file, line);
+        replace(line.begin(),line.end(), ';' ,' ');
+        istringstream convert3(line);
+
+
+
+        for(unsigned int j = 0; j != vertices; j++)
+        {
+
+            convert3 >> coordz;
+            coordinatesz.push_back(coordz);
+
+        }
+
+        for(unsigned int i = 0; i != vertices;i++)
+
+        {
+            vert.push_back(coordinatesx[i]);
+            vert.push_back(coordinatesy[i]);
+            vert.push_back(coordinatesz[i]);
+
+            Vertices.push_back(vert);
+            vert = {};
+
         }
 
         data.Vertices.insert({id,Vertices});
@@ -103,9 +147,9 @@ bool ImportAll(const string &filename, DFN &data)
 
 }
 
-//-------------------------------------------------------TEST-DELLA-SFERA-E-DEL-BARICENTRO------------------------------------------------------------------------
+//-------------------------------------------------------TEST-DELLA-SFERA-E-DEL-BARICENTRO-------------------------------------------------------------------------
 
-bool Baricentri(DFN &data)
+bool Testsfera(DFN &data)
 
 {
 
@@ -121,33 +165,25 @@ bool Baricentri(DFN &data)
 
         for(unsigned int i = 0; i != 4; i++)
         {
-            tmpx += data.Vertices[id][0][i];
-            //cout << "x " << tmpx << endl;
+            tmpx += data.Vertices[id][i][0];
 
         }
 
         x_bari = tmpx / 4;
-        //cout << fixed << setprecision(6) << "barix " << x_bari << endl;
-
 
         for(unsigned int i = 0; i != 4; i++ )
         {
-            tmpy += data.Vertices[id][1][i];
-            //cout << "y " << tmpy << endl;
+            tmpy += data.Vertices[id][i][1];
         }
 
         y_bari = tmpy / 4;
-        //cout << fixed << setprecision(6) << "bariy " <<  y_bari << endl;
-
 
         for(unsigned int i = 0; i != 4; i++ )
         {
-            tmpz += data.Vertices[id][2][i];
-            //cout << "z " << tmpz << endl;
+            tmpz += data.Vertices[id][i][2];
         }
 
         z_bari = tmpz / 4;
-        //cout << fixed << setprecision(6) << "bariz " << z_bari<< endl;
 
         tmp_bari.push_back(x_bari);
         tmp_bari.push_back(y_bari);
@@ -157,49 +193,34 @@ bool Baricentri(DFN &data)
 
     }
 
+    double distance = 0.0;
+
+    for(unsigned int id = 0; id != 3; id++)
+    {
+            double maxdistance = 0.0;
+
+        for(unsigned int i = 0; i !=4; i++)
+        {
+            distance = pow(data.Baricentri[id][0] - data.Vertices[id][i][0],2) + pow(data.Baricentri[id][1] - data.Vertices[id][i][1],2) + pow(data.Baricentri[id][2] - data.Vertices[id][i][2],2);
+            cout << distance;
+            if(distance > maxdistance)
+            {
+                maxdistance = distance;
+            }
+
+        }
+
+        data.raggi.insert({id,maxdistance});
+
+    }
+
     return true;
 
 }
 
+//-------------------------------------------------------------TEST-PIANI-PARALLELI-------------------------------------------------------------------------
+
+bool Testpianiparalleli(DFN &data);
+
+
 }
-
-// vector<double> calcolaBaricentro(const vector<vector<double>>& vertici)
-// {
-//     vector<double> baricentro(3, 0.0);
-//     int numVertici = 4;
-
-
-//     for (const auto& vertice : vertici)
-//     {
-//         for (int i = 0; i < 3; ++i)
-//         {
-//             baricentro[i] += vertice[i];
-//         }
-//     }
-
-
-//     for (int i = 0; i < 3; ++i)
-//     {
-//         baricentro[i] /= numVertici;
-//     }
-
-//     return baricentro;
-// }
-
-// int main() {
-//     Data data;
-
-
-//     // Calcolo e stampa dei baricentri
-//     for (const auto& pair : data.Vertices) {
-//         std::vector<double> baricentro = calcolaBaricentro(pair.second);
-//         std::cout << "Baricentro del gruppo " << pair.first << ": ";
-//         for (const auto& coord : baricentro) {
-//             std::cout << coord << " ";
-//         }
-//         std::cout << std::endl;
-//     }
-
-//     return 0;
-// }
-
