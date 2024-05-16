@@ -6,12 +6,14 @@
 #include <vector>
 #include <iomanip>
 #include <cmath>
+#include <Eigen/Eigen>
 
+using namespace Eigen;
 
 namespace FracturesTraces
 {
 
-//---------------------------------------------------------------CONTROLLO-GENERICO--------------------------------------------------------------------------------
+//--------------------------------CONTROLLO-GENERICO----------------------------------------------------------------------------
 
 bool ImportData(DFN& data)
 {
@@ -20,19 +22,29 @@ bool ImportData(DFN& data)
         return false;
     }
 
-
-
     if(!Testsfera(data))
     {
        return false;
     }
+
+    if(!Testpianiparalleli(data))
+    {
+        return false;
+    }
+
+    if(!Testintersezione(data))
+    {
+        return false;
+    }
+
+
 
     return true;
 
 
 }
 
-//-------------------------------------------------INIZIALIZZO-LA-MAPPA-CHE-ASSOCIA-ID-A-UN-VETTORE-DI-VETTORI-CHE-DEFINISCE-LE-COORDINATE-------------------------
+//--------------------------------INIZIALIZZO-LA-MAPPA-CHE-ASSOCIA-ID-A-UN-VETTORE-DI-VETTORI-CHE-DEFINISCE-LE-COORDINATE-------
 
 bool ImportAll(const string &filename, DFN &data)
 {
@@ -147,10 +159,9 @@ bool ImportAll(const string &filename, DFN &data)
 
 }
 
-//-------------------------------------------------------TEST-DELLA-SFERA-E-DEL-BARICENTRO-------------------------------------------------------------------------
+//--------------------------------TEST-DELLA-SFERA-E-DEL-BARICENTRO-------------------------------------------------------------
 
 bool Testsfera(DFN &data)
-
 {
 
     for(unsigned int id = 0; id != 3; id++)
@@ -202,7 +213,6 @@ bool Testsfera(DFN &data)
         for(unsigned int i = 0; i !=4; i++)
         {
             distance = pow(data.Baricentri[id][0] - data.Vertices[id][i][0],2) + pow(data.Baricentri[id][1] - data.Vertices[id][i][1],2) + pow(data.Baricentri[id][2] - data.Vertices[id][i][2],2);
-            cout << distance;
             if(distance > maxdistance)
             {
                 maxdistance = distance;
@@ -218,9 +228,102 @@ bool Testsfera(DFN &data)
 
 }
 
-//-------------------------------------------------------------TEST-PIANI-PARALLELI-------------------------------------------------------------------------
+//--------------------------------TEST-PIANI-PARALLELI--------------------------------------------------------------------------
 
-bool Testpianiparalleli(DFN &data);
+bool Testpianiparalleli(DFN &data)
+{
+
+    vector<double> normal;
+    vector<double> point0;
+    vector<double> point1;
+    vector<double> point2;
+
+
+
+    for(unsigned int id = 0; id != 3; id++)
+    {
+        double normalx = 0.0;
+        double normaly = 0.0;
+        double normalz = 0.0;
+        double d = 0.0;
+
+        point0 = data.Vertices[id][0];
+        point1 = data.Vertices[id][1];
+        point2 = data.Vertices[id][2];
+
+        normalx = (point1[1]-point0[1])*(point2[2]-point0[2])-(point1[2]-point0[2])*(point2[1]-point0[1]);
+        normaly = (point1[2]-point0[2])*(point2[0]-point0[0])-(point1[0]-point0[0])*(point2[2]-point0[2]);
+        normalz = (point1[0]-point0[0])*(point2[1]-point0[1])-(point1[1]-point0[1])*(point2[0]-point0[0]);
+
+        d = -normalx*point0[0]-normaly*point0[0]-normalz*point0[0];
+
+        normal.push_back(normalx);
+        normal.push_back(normaly);
+        normal.push_back(normalz);
+        normal.push_back(d);
+
+        data.Normals.insert({id,normal});
+
+        normal = {};
+
+    }
+
+    return true;
 
 
 }
+
+//--------------------------------TEST-INTERSEZIONE-----------------------------------------------------------------------------
+
+bool Testintersezione(DFN &data)
+{
+
+
+    vector<double> vettore1;
+    vector<double> vettore2;
+    vector<double> director;
+
+    vettore1 = data.Normals[0];
+    vettore2 = data.Normals[2];
+
+    director.push_back((vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]));
+    director.push_back((vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]));
+    director.push_back((vettore1[0]*vettore2[1])-(vettore1[1]*vettore2[0]));
+
+    Matrix2d A;
+
+    A << vettore1[0], vettore1[1], vettore2[0], vettore2[1];
+
+    Vector2d b;
+
+    b << 0, 0.105;
+
+    Vector2d solution = A.colPivHouseholderQr().solve(b);
+
+    double x0 = solution(0);
+    double y0 = solution(1);
+    double z0 = 0;
+
+    cout << x0 << " " << y0 << " " << z0;
+
+
+    return true;
+
+
+}
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+// Verifica della parallelità confrontando i vettori normali
+// return (normal1_x * normal2_y == normal1_y * normal2_x) && (normal1_x * normal2_z == normal1_z * normal2_x);

@@ -16,6 +16,10 @@ struct DFN
 
     map<unsigned int, double> raggi = {};
 
+    map<unsigned int, vector<double>> Normals = {};
+
+
+
     unsigned int NumberTraces = 0;
     vector<unsigned int> TracesId = {};
     map<unsigned int, vector<unsigned int>> GeneratingFractures = {};

@@ -3,6 +3,7 @@
 #include "Eigen/Eigen"
 #include <Data.hpp>
 
+
 using namespace std;
 using namespace Eigen;
 
@@ -15,6 +16,8 @@ bool ImportAll(const string &filename, DFN& data);
 bool Testsfera(DFN &data);
 
 bool Testpianiparalleli(DFN &data);
+
+bool Testintersezione(DFN &data);
 
 }
 
