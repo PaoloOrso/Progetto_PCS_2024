@@ -238,8 +238,6 @@ bool Testpianiparalleli(DFN &data)
     vector<double> point1;
     vector<double> point2;
 
-
-
     for(unsigned int id = 0; id != 3; id++)
     {
         double normalx = 0.0;
@@ -255,14 +253,14 @@ bool Testpianiparalleli(DFN &data)
         normaly = (point1[2]-point0[2])*(point2[0]-point0[0])-(point1[0]-point0[0])*(point2[2]-point0[2]);
         normalz = (point1[0]-point0[0])*(point2[1]-point0[1])-(point1[1]-point0[1])*(point2[0]-point0[0]);
 
-        d = -normalx*point0[0]-normaly*point0[0]-normalz*point0[0];
+        d = -normalx*point0[0] - normaly*point0[1] - normalz*point0[2];
 
         normal.push_back(normalx);
         normal.push_back(normaly);
         normal.push_back(normalz);
-        normal.push_back(d);
 
         data.Normals.insert({id,normal});
+        data.Directors.insert({id,d});
 
         normal = {};
 
@@ -284,46 +282,41 @@ bool Testintersezione(DFN &data)
     vector<double> director;
 
     vettore1 = data.Normals[0];
-    vettore2 = data.Normals[2];
+    vettore2 = data.Normals[1];
 
     director.push_back((vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]));
     director.push_back((vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]));
     director.push_back((vettore1[0]*vettore2[1])-(vettore1[1]*vettore2[0]));
 
-    Matrix2d A;
+    Matrix3d A;
+    A << vettore1[0],vettore1[1],vettore1[2],
+        vettore2[0],vettore2[1],vettore2[2],
+        director[0],director[1],director[2];
 
-    A << vettore1[0], vettore1[1], vettore2[0], vettore2[1];
+    Vector3d b;
 
-    Vector2d b;
+    b << -data.Directors[0] , -data.Directors[1],0;
 
-    b << 0, 0.105;
-
-    Vector2d solution = A.colPivHouseholderQr().solve(b);
+    Vector3d solution = A.colPivHouseholderQr().solve(b);
 
     double x0 = solution(0);
     double y0 = solution(1);
-    double z0 = 0;
+    double z0 = solution(2);
 
-    cout << x0 << " " << y0 << " " << z0;
+    // fare la proiezione dei vertici sulla retta di intersezione
+
+
+
+
+
+
+
+
+
 
 
     return true;
 
-
 }
 
-
-
-
-
-
-
-
-
 }
-
-
-
-
-// Verifica della parallelità confrontando i vettori normali
-// return (normal1_x * normal2_y == normal1_y * normal2_x) && (normal1_x * normal2_z == normal1_z * normal2_x);

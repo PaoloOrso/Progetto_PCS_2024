@@ -18,6 +18,8 @@ struct DFN
 
     map<unsigned int, vector<double>> Normals = {};
 
+    map<unsigned int, double> Directors;
+
 
 
     unsigned int NumberTraces = 0;
