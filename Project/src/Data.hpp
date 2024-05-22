@@ -9,7 +9,7 @@ namespace FracturesTraces{
 
 struct DFN
 {
-    unsigned int NumberFractures = {};
+    unsigned int NumberFractures = 0;
     vector<unsigned int> FracturesId = {};
     vector<unsigned int> NumberVertices = {};
     map<unsigned int, vector<vector<double>>> Vertices ={};

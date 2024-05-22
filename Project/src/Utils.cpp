@@ -67,6 +67,7 @@ bool ImportAll(const string &filename, DFN &data)
     getline(file, line);
     convertN.str(line);
     convertN >> NFractures;
+    data.NumberFractures = NFractures;
     getline(file,line);
 
     for(unsigned int i = 0; i != NFractures; i++)
@@ -276,34 +277,77 @@ bool Testpianiparalleli(DFN &data)
 bool Testintersezione(DFN &data)
 {
 
+    // for (unsigned int i = 0; i != data.NumberFractures;i++ )
+    //     for ( unsigned int j = i +1; j != data.NumberFractures; j++)
 
-    vector<double> vettore1;
-    vector<double> vettore2;
-    vector<double> director;
 
-    vettore1 = data.Normals[0];
-    vettore2 = data.Normals[1];
+                vector<double> vettore1;
+                vector<double> vettore2;
+                vector<double> director;
 
-    director.push_back((vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]));
-    director.push_back((vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]));
-    director.push_back((vettore1[0]*vettore2[1])-(vettore1[1]*vettore2[0]));
+                vettore1 = data.Normals[2];
+                vettore2 = data.Normals[1];
 
-    Matrix3d A;
-    A << vettore1[0],vettore1[1],vettore1[2],
-        vettore2[0],vettore2[1],vettore2[2],
-        director[0],director[1],director[2];
+                director.push_back((vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]));
+                director.push_back((vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]));
+                director.push_back((vettore1[0]*vettore2[1])-(vettore1[1]*vettore2[0]));
 
-    Vector3d b;
+                Matrix3d A;
+                A << vettore1[0],vettore1[1],vettore1[2],
+                    vettore2[0],vettore2[1],vettore2[2],
+                    director[0],director[1],director[2];
 
-    b << -data.Directors[0] , -data.Directors[1],0;
+                Vector3d b;
 
-    Vector3d solution = A.colPivHouseholderQr().solve(b);
+                b << -data.Directors[2] , -data.Directors[1],0;
 
-    double x0 = solution(0);
-    double y0 = solution(1);
-    double z0 = solution(2);
+                Vector3d solution = A.colPivHouseholderQr().solve(b);
 
-    // fare la proiezione dei vertici sulla retta di intersezione
+                double x0 = solution(0);
+                double y0 = solution(1);
+                double z0 = solution(2);
+
+                cout << "Punto sulla retta: " << "X:" << x0 << " Y:" << y0 << " Z:" << z0 << endl;
+
+                vector<double> vertice1;
+                vector<double> vertice2;
+                vector<double> vertice3;
+                vector<double> vertice4;
+
+                vector<double> verti1;
+                vector<double> verti2;
+                vector<double> verti3;
+                vector<double> verti4;
+
+                vertice1 = data.Vertices[2][0];
+                vertice2 = data.Vertices[2][1];
+                vertice3 = data.Vertices[2][2];
+                vertice4 = data.Vertices[2][3];
+
+                verti1 = data.Vertices[1][0];
+                verti2 = data.Vertices[1][1];
+                verti3 = data.Vertices[1][2];
+                verti4 = data.Vertices[1][3];
+
+                Matrix2d AA;
+                AA(0, 0) = director[2];            AA(0, 1) = -(vertice2[0] - vertice1[0]);
+                AA(1, 0) = director[1];            AA(1, 1) = -(vertice2[1] - vertice1[1]);
+
+                Vector2d BB;
+                BB(0) = vertice1[0] - x0;
+                BB(1) = vertice1[1] - y0;
+
+
+                Vector2d x = AA.colPivHouseholderQr().solve(BB);
+
+                double t = x(0);
+                double u = x(1);
+
+
+                if(u>=0 && u <=1)
+                {
+                    cout << "Intersezione con lato";
+                }
 
 
 
