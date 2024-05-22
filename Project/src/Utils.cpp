@@ -24,7 +24,7 @@ bool ImportData(DFN& data)
 
     if(!Testsfera(data))
     {
-       return false;
+        return false;
     }
 
     if(!Testpianiparalleli(data))
@@ -209,7 +209,7 @@ bool Testsfera(DFN &data)
 
     for(unsigned int id = 0; id != 3; id++)
     {
-            double maxdistance = 0.0;
+        double maxdistance = 0.0;
 
         for(unsigned int i = 0; i !=4; i++)
         {
@@ -277,90 +277,95 @@ bool Testpianiparalleli(DFN &data)
 bool Testintersezione(DFN &data)
 {
 
-     // for (unsigned int i = 0; i != data.NumberFractures;i++ )
-     //     for ( unsigned int j = i +1; j != data.NumberFractures; j++)
-     //     {
+    // for (unsigned int i = 0; i != data.NumberFractures;i++ )
+    //     for ( unsigned int j = i +1; j != data.NumberFractures; j++)
+    //     {
 
-                unsigned int i = 0;
-                unsigned int j = 1;
+    unsigned int i = 0;
+    unsigned int j = 1;
 
-                vector<double> vettore1;
-                vector<double> vettore2;
-                vector<double> director;
+    vector<double> vettore1;
+    vector<double> vettore2;
+    vector<double> director;
 
-                vettore1 = data.Normals[i];
-                vettore2 = data.Normals[j];
+    vettore1 = data.Normals[i];
+    vettore2 = data.Normals[j];
 
-                director.push_back((vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]));
-                director.push_back((vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]));
-                director.push_back((vettore1[0]*vettore2[1])-(vettore1[1]*vettore2[0]));
+    director.push_back((vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]));
+    director.push_back((vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]));
+    director.push_back((vettore1[0]*vettore2[1])-(vettore1[1]*vettore2[0]));
 
-                Matrix3d A;
-                A << vettore1[0],vettore1[1],vettore1[2],
-                    vettore2[0],vettore2[1],vettore2[2],
-                    director[0],director[1],director[2];
+    Matrix3d A;
+    A << vettore1[0],vettore1[1],vettore1[2],
+        vettore2[0],vettore2[1],vettore2[2],
+        director[0],director[1],director[2];
 
-                Vector3d b;
+    Vector3d b;
 
-                b << -data.Directors[i] , -data.Directors[j],0;
+    b << -data.Directors[i] , -data.Directors[j],0;
 
-                Vector3d solution = A.colPivHouseholderQr().solve(b);
+    Vector3d solution = A.colPivHouseholderQr().solve(b);
 
-                double x0 = solution(0);
-                double y0 = solution(1);
-                double z0 = solution(2);
+    double x0 = solution(0);
+    double y0 = solution(1);
+    double z0 = solution(2);
 
-                // cout << "Punto sulla retta: " << "X:" << x0 << " Y:" << y0 << " Z:" << z0 << endl;
+    // cout << "Punto sulla retta: " << "X:" << x0 << " Y:" << y0 << " Z:" << z0 << endl;
 
-                vector<vector<double>> vertici1;
-                vector<vector<double>> vertici2;
+    //vector<vector<double>> vertici1;
+    //vector<vector<double>> vertici2;
 
-                for(unsigned int k = 0; k != data.NumberVertices[i]; k++)
-                {
-                    vertici1.push_back(data.Vertices[i][k]);
-                }
-                vertici1.push_back(data.Vertices[i][0]);
+    /*for(unsigned int k = 0; k != data.NumberVertices[i]; k++)
+    {
+        vertici1.push_back(data.Vertices[i][k]);
+    }
+    vertici1.push_back(data.Vertices[i][0]);
 
-                for(unsigned int l = 0; l != data.NumberVertices[j]; l++)
-                {
-                    vertici2.push_back(data.Vertices[j][l]);
-                }
-                vertici2.push_back(data.Vertices[j][0]);
-
-
-
-
-                for(unsigned int w = 0; w != data.NumberVertices[i]; w++)
-                {
+    for(unsigned int l = 0; l != data.NumberVertices[j]; l++)
+    {
+        vertici2.push_back(data.Vertices[j][l]);
+    }
+    vertici2.push_back(data.Vertices[j][0]);*/
 
 
 
+    const unsigned int numVertices = data.Vertices[i].size();
+    for(unsigned int w = 0; w < numVertices; w++)
+    {
+        const vector<double>& punto1 = data.Vertices[i][w];
+        const vector<double>& punto2 = data.Vertices[i][(w + 1) % numVertices];
 
-                Matrix2d AA;
-                AA(0, 0) = director[i];            AA(0, 1) = -(vertici1[w+1][0] - vertici1[w][0]);
-                AA(1, 0) = director[j];            AA(1, 1) = -(vertici1[w+1][1] - vertici1[w][1]);
+        Matrix<double,3,2> AA;
+        /*AA(0, 0) = director[0];            AA(0, 1) = -(vertici1[w+1][0] - vertici1[w][0]);
+        AA(1, 0) = director[1];            AA(1, 1) = -(vertici1[w+1][1] - vertici1[w][1]);*/
 
-                Vector2d bb;
-                bb(0) = vertici1[w][0] - x0;
-                bb(1) = vertici1[w][1] - y0;
-
-
-                Vector2d x = AA.colPivHouseholderQr().solve(bb);
-
-                double t = x(0);
-                double u = x(1);
-
-
-                if(u>=0 && u <=1)
-                {
-                    cout << "Intersezione con lato" << endl;
-                }
-
-                }
+        AA << director[0], director[1], director[2],
+            -(punto2[0] - punto1[0]),-(punto2[1] - punto1[1]),-(punto2[2] - punto1[2]);
 
 
 
-       //  }
+        Vector3d bb;
+        bb(0) = punto1[0] - x0;
+        bb(1) = punto1[1] - y0;
+        bb(2)=  punto1[2] - z0;
+
+
+        Vector2d x = AA.colPivHouseholderQr().solve(bb);
+
+        double t = x(0);
+        double u = x(1);
+
+
+        if(u>=0.0 && u <=1.0)
+        {
+            cout << "Intersezione con lato" << endl;
+        }
+
+    }
+
+
+
+    //  }
 
 
 
