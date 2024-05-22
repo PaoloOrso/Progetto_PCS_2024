@@ -18,7 +18,7 @@ struct DFN
 
     map<unsigned int, vector<double>> Normals = {};
 
-    map<unsigned int, double> Directors;
+    map<unsigned int, double> D;
 
 
 

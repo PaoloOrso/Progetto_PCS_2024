@@ -256,12 +256,20 @@ bool Testpianiparalleli(DFN &data)
 
         d = -normalx*point0[0] - normaly*point0[1] - normalz*point0[2];
 
+
+        double somma_normal = 0.0;
+        somma_normal = (normalx * normalx) +(normaly * normaly) +(normalz * normalz);
+        double normalN = sqrt(somma_normal);
+
+        normalx = normalx / normalN;
+        normaly = normaly / normalN;
+        normalz = normalz / normalN;
         normal.push_back(normalx);
         normal.push_back(normaly);
         normal.push_back(normalz);
 
         data.Normals.insert({id,normal});
-        data.Directors.insert({id,d});
+        data.D.insert({id,d});
 
         normal = {};
 
@@ -290,10 +298,19 @@ bool Testintersezione(DFN &data)
 
     vettore1 = data.Normals[i];
     vettore2 = data.Normals[j];
+    double directorx = (vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]);
+    double directory = (vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]);
+    double directorz = (vettore1[0]*vettore2[1])-(vettore1[1]*vettore2[0]);
 
-    director.push_back((vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]));
-    director.push_back((vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]));
-    director.push_back((vettore1[0]*vettore2[1])-(vettore1[1]*vettore2[0]));
+    double direc_sum = (directorx * directorx) + (directory * directory) + (directorz * directorz);
+    double direc_norm = sqrt(direc_sum);
+    directorx = directorx/direc_norm;
+    directory = directory/direc_norm;
+    directorz = directorz/direc_norm;
+
+    director.push_back(directorx);
+    director.push_back(directory);
+    director.push_back(directorz);
 
     Matrix3d A;
     A << vettore1[0],vettore1[1],vettore1[2],
@@ -302,32 +319,13 @@ bool Testintersezione(DFN &data)
 
     Vector3d b;
 
-    b << -data.Directors[i] , -data.Directors[j],0;
+    b << -data.D[i] , -data.D[j],0;
 
     Vector3d solution = A.colPivHouseholderQr().solve(b);
 
     double x0 = solution(0);
     double y0 = solution(1);
     double z0 = solution(2);
-
-    // cout << "Punto sulla retta: " << "X:" << x0 << " Y:" << y0 << " Z:" << z0 << endl;
-
-    //vector<vector<double>> vertici1;
-    //vector<vector<double>> vertici2;
-
-    /*for(unsigned int k = 0; k != data.NumberVertices[i]; k++)
-    {
-        vertici1.push_back(data.Vertices[i][k]);
-    }
-    vertici1.push_back(data.Vertices[i][0]);
-
-    for(unsigned int l = 0; l != data.NumberVertices[j]; l++)
-    {
-        vertici2.push_back(data.Vertices[j][l]);
-    }
-    vertici2.push_back(data.Vertices[j][0]);*/
-
-
 
     const unsigned int numVertices = data.Vertices[i].size();
     for(unsigned int w = 0; w < numVertices; w++)
@@ -355,15 +353,18 @@ bool Testintersezione(DFN &data)
         double t = x(0);
         double u = x(1);
 
-
-        if(u>=0.0 && u <=1.0)
+        unsigned int cont = 0;
+        if(u>=0.0 && u <1.0)
         {
             cout << "Intersezione con lato" << endl;
+            cont++;
         }
 
     }
 
+    //if(cont == 2){
 
+    //}
 
     //  }
 
