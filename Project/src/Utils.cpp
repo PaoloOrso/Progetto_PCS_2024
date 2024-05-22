@@ -277,16 +277,19 @@ bool Testpianiparalleli(DFN &data)
 bool Testintersezione(DFN &data)
 {
 
-    // for (unsigned int i = 0; i != data.NumberFractures;i++ )
-    //     for ( unsigned int j = i +1; j != data.NumberFractures; j++)
+     // for (unsigned int i = 0; i != data.NumberFractures;i++ )
+     //     for ( unsigned int j = i +1; j != data.NumberFractures; j++)
+     //     {
 
+                unsigned int i = 0;
+                unsigned int j = 1;
 
                 vector<double> vettore1;
                 vector<double> vettore2;
                 vector<double> director;
 
-                vettore1 = data.Normals[2];
-                vettore2 = data.Normals[1];
+                vettore1 = data.Normals[i];
+                vettore2 = data.Normals[j];
 
                 director.push_back((vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]));
                 director.push_back((vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]));
@@ -299,7 +302,7 @@ bool Testintersezione(DFN &data)
 
                 Vector3d b;
 
-                b << -data.Directors[2] , -data.Directors[1],0;
+                b << -data.Directors[i] , -data.Directors[j],0;
 
                 Vector3d solution = A.colPivHouseholderQr().solve(b);
 
@@ -307,38 +310,42 @@ bool Testintersezione(DFN &data)
                 double y0 = solution(1);
                 double z0 = solution(2);
 
-                cout << "Punto sulla retta: " << "X:" << x0 << " Y:" << y0 << " Z:" << z0 << endl;
+                // cout << "Punto sulla retta: " << "X:" << x0 << " Y:" << y0 << " Z:" << z0 << endl;
 
-                vector<double> vertice1;
-                vector<double> vertice2;
-                vector<double> vertice3;
-                vector<double> vertice4;
+                vector<vector<double>> vertici1;
+                vector<vector<double>> vertici2;
 
-                vector<double> verti1;
-                vector<double> verti2;
-                vector<double> verti3;
-                vector<double> verti4;
+                for(unsigned int k = 0; k != data.NumberVertices[i]; k++)
+                {
+                    vertici1.push_back(data.Vertices[i][k]);
+                }
+                vertici1.push_back(data.Vertices[i][0]);
 
-                vertice1 = data.Vertices[2][0];
-                vertice2 = data.Vertices[2][1];
-                vertice3 = data.Vertices[2][2];
-                vertice4 = data.Vertices[2][3];
+                for(unsigned int l = 0; l != data.NumberVertices[j]; l++)
+                {
+                    vertici2.push_back(data.Vertices[j][l]);
+                }
+                vertici2.push_back(data.Vertices[j][0]);
 
-                verti1 = data.Vertices[1][0];
-                verti2 = data.Vertices[1][1];
-                verti3 = data.Vertices[1][2];
-                verti4 = data.Vertices[1][3];
+
+
+
+                for(unsigned int w = 0; w != data.NumberVertices[i]; w++)
+                {
+
+
+
 
                 Matrix2d AA;
-                AA(0, 0) = director[2];            AA(0, 1) = -(vertice2[0] - vertice1[0]);
-                AA(1, 0) = director[1];            AA(1, 1) = -(vertice2[1] - vertice1[1]);
+                AA(0, 0) = director[i];            AA(0, 1) = -(vertici1[w+1][0] - vertici1[w][0]);
+                AA(1, 0) = director[j];            AA(1, 1) = -(vertici1[w+1][1] - vertici1[w][1]);
 
-                Vector2d BB;
-                BB(0) = vertice1[0] - x0;
-                BB(1) = vertice1[1] - y0;
+                Vector2d bb;
+                bb(0) = vertici1[w][0] - x0;
+                bb(1) = vertici1[w][1] - y0;
 
 
-                Vector2d x = AA.colPivHouseholderQr().solve(BB);
+                Vector2d x = AA.colPivHouseholderQr().solve(bb);
 
                 double t = x(0);
                 double u = x(1);
@@ -346,8 +353,14 @@ bool Testintersezione(DFN &data)
 
                 if(u>=0 && u <=1)
                 {
-                    cout << "Intersezione con lato";
+                    cout << "Intersezione con lato" << endl;
                 }
+
+                }
+
+
+
+       //  }
 
 
 
