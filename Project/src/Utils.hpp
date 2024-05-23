@@ -20,4 +20,3 @@ bool Testpianiparalleli(DFN &data);
 bool Testintersezione(DFN &data);
 
 }
-

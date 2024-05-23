@@ -84,9 +84,9 @@ bool ImportAll(const string &filename, DFN &data)
         vector<double> coordinatesy;
         vector<double> coordinatesz;
 
-        vector<double> vert;
+        Vector3d vert;
 
-        vector<vector<double>> Vertices;
+        vector<Vector3d> Vertices;
 
         getline(file, line);
         convertN.str(line);
@@ -141,9 +141,9 @@ bool ImportAll(const string &filename, DFN &data)
         for(unsigned int i = 0; i != vertices;i++)
 
         {
-            vert.push_back(coordinatesx[i]);
-            vert.push_back(coordinatesy[i]);
-            vert.push_back(coordinatesz[i]);
+            vert[0] = coordinatesx[i];
+            vert[1] = coordinatesy[i];
+            vert[2] = coordinatesz[i];
 
             Vertices.push_back(vert);
             vert = {};
@@ -234,49 +234,35 @@ bool Testsfera(DFN &data)
 bool Testpianiparalleli(DFN &data)
 {
 
-    vector<double> normal;
-    vector<double> point0;
-    vector<double> point1;
-    vector<double> point2;
+    Vector3d point0;
+    Vector3d point1;
+    Vector3d point2;
+    Vector3d u;
+    Vector3d v;
 
     for(unsigned int id = 0; id != 3; id++)
     {
-        double normalx = 0.0;
-        double normaly = 0.0;
-        double normalz = 0.0;
+
+        Vector3d normal;
         double d = 0.0;
 
         point0 = data.Vertices[id][0];
         point1 = data.Vertices[id][1];
         point2 = data.Vertices[id][2];
 
-        normalx = (point1[1]-point0[1])*(point2[2]-point0[2])-(point1[2]-point0[2])*(point2[1]-point0[1]);
-        normaly = (point1[2]-point0[2])*(point2[0]-point0[0])-(point1[0]-point0[0])*(point2[2]-point0[2]);
-        normalz = (point1[0]-point0[0])*(point2[1]-point0[1])-(point1[1]-point0[1])*(point2[0]-point0[0]);
+        u = point2-point0;
+        v = point1-point0;
 
-        d = -normalx*point0[0] - normaly*point0[1] - normalz*point0[2];
+        normal = (u.cross(v));
+        normal = normal.normalized();
 
+        d = -normal[0]*point0[0] - normal[1]*point0[1] - normal[2]*point0[2];
 
-        double somma_normal = 0.0;
-        somma_normal = (normalx * normalx) +(normaly * normaly) +(normalz * normalz);
-        double normalN = sqrt(somma_normal);
-
-        normalx = normalx / normalN;
-        normaly = normaly / normalN;
-        normalz = normalz / normalN;
-        normal.push_back(normalx);
-        normal.push_back(normaly);
-        normal.push_back(normalz);
-
-        data.Normals.insert({id,normal});
-        data.D.insert({id,d});
-
-        normal = {};
-
+        data.Normals.push_back(normal);
+        data.Directors.insert({id,d});
     }
 
     return true;
-
 
 }
 
@@ -285,98 +271,80 @@ bool Testpianiparalleli(DFN &data)
 bool Testintersezione(DFN &data)
 {
 
-    // for (unsigned int i = 0; i != data.NumberFractures;i++ )
-    //     for ( unsigned int j = i +1; j != data.NumberFractures; j++)
-    //     {
-
-    unsigned int i = 0;
-    unsigned int j = 1;
-
-    vector<double> vettore1;
-    vector<double> vettore2;
-    vector<double> director;
-
-    vettore1 = data.Normals[i];
-    vettore2 = data.Normals[j];
-    double directorx = (vettore1[1]*vettore2[2])-(vettore1[2]*vettore2[1]);
-    double directory = (vettore1[2]*vettore2[0])-(vettore1[0]*vettore2[2]);
-    double directorz = (vettore1[0]*vettore2[1])-(vettore1[1]*vettore2[0]);
-
-    double direc_sum = (directorx * directorx) + (directory * directory) + (directorz * directorz);
-    double direc_norm = sqrt(direc_sum);
-    directorx = directorx/direc_norm;
-    directory = directory/direc_norm;
-    directorz = directorz/direc_norm;
-
-    director.push_back(directorx);
-    director.push_back(directory);
-    director.push_back(directorz);
-
-    Matrix3d A;
-    A << vettore1[0],vettore1[1],vettore1[2],
-        vettore2[0],vettore2[1],vettore2[2],
-        director[0],director[1],director[2];
-
-    Vector3d b;
-
-    b << -data.D[i] , -data.D[j],0;
-
-    Vector3d solution = A.colPivHouseholderQr().solve(b);
-
-    double x0 = solution(0);
-    double y0 = solution(1);
-    double z0 = solution(2);
-
-    const unsigned int numVertices = data.Vertices[i].size();
-    for(unsigned int w = 0; w < numVertices; w++)
-    {
-        const vector<double>& punto1 = data.Vertices[i][w];
-        const vector<double>& punto2 = data.Vertices[i][(w + 1) % numVertices];
-
-        Matrix<double,3,2> AA;
-        /*AA(0, 0) = director[0];            AA(0, 1) = -(vertici1[w+1][0] - vertici1[w][0]);
-        AA(1, 0) = director[1];            AA(1, 1) = -(vertici1[w+1][1] - vertici1[w][1]);*/
-
-        AA << director[0], director[1], director[2],
-            -(punto2[0] - punto1[0]),-(punto2[1] - punto1[1]),-(punto2[2] - punto1[2]);
-
-
-
-        Vector3d bb;
-        bb(0) = punto1[0] - x0;
-        bb(1) = punto1[1] - y0;
-        bb(2)=  punto1[2] - z0;
-
-
-        Vector2d x = AA.colPivHouseholderQr().solve(bb);
-
-        double t = x(0);
-        double u = x(1);
-
-        unsigned int cont = 0;
-        if(u>=0.0 && u <1.0)
+    for (unsigned int i = 0; i != data.NumberFractures;i++ )
+        for ( unsigned int j = i +1; j != data.NumberFractures; j++)
         {
-            cout << "Intersezione con lato" << endl;
-            cont++;
+
+            // test sfera e piani paralleli
+
+
+
+            Vector3d normale1;
+            Vector3d normale2;
+            Vector3d director;
+
+            normale1 = data.Normals[i];
+            normale2 = data.Normals[j];
+
+            director = normale1.cross(normale2);
+
+            Matrix3d A;
+            A << normale1[0],normale1[1],normale1[2],
+                normale2[0],normale2[1],normale2[2],
+                director[0],director[1],director[2];
+
+            Vector3d b;
+
+            b << -data.Directors[i] , -data.Directors[j],0;
+
+            Vector3d P0 = A.colPivHouseholderQr().solve(b);  //primo punto sulla retta di intersezione
+
+            Vector3d P1 = P0+director;   //secondo punto sulla retta di intersezione
+
+
+            const unsigned int numVertices = data.Vertices[i].size();
+            for(unsigned int w = 0; w < numVertices; w++)
+            {
+                const Vector3d punto0 = data.Vertices[i][w];
+                const Vector3d punto1 = data.Vertices[i][(w + 1) % numVertices];
+
+                Vector3d diff1 = P1-P0;
+                Vector3d diff2 = punto1-punto0;
+                Vector3d diff3 = punto0-P0;
+
+                Vector3d sos = diff1.cross(diff2);
+
+
+                if(sos.norm() > 1e-10)
+                {
+                    Matrix<double,3,2> AA;
+
+                    AA << diff1[0],diff2[0],
+                        diff1[1],diff2[1],
+                        diff1[2],diff2[2];
+
+
+                    Vector3d bb;
+                    bb(0) = diff3[0];
+                    bb(1) = diff3[1];
+                    bb(2) = diff3[2];
+
+
+                    Vector2d intersection = AA.colPivHouseholderQr().solve(bb);
+
+                    double alfa = intersection(0);
+                    double beta = intersection(1);
+
+                    cout << alfa << " " << beta << endl;
+
+                    cout << "punto:" << endl << P0+alfa*(P1-P0) << endl << "punto:" << endl << punto0-beta*(punto1-punto0) << endl;
+
+
+                }
+
+            }
+
         }
-
-    }
-
-    //if(cont == 2){
-
-    //}
-
-    //  }
-
-
-
-
-
-
-
-
-
-
 
     return true;
 
