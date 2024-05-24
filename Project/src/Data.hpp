@@ -10,26 +10,21 @@ namespace FracturesTraces{
 struct DFN
 {
     unsigned int NumberFractures;
-    vector<unsigned int> FracturesId;
+    unsigned int MaxId;
     vector<unsigned int> NumberVertices;
     map<unsigned int, vector<Vector3d>> Vertices;
 
-    map<unsigned int, double> raggi = {};
+    vector<Vector3d> Baricentri;
+    vector<double> raggi;
 
-    vector<Vector3d> Normals;
-
-    map<unsigned int, double> Directors;
-
+    vector<Vector3d> Normals;  
+    vector<double> Ds;
 
 
     unsigned int NumberTraces = 0;
     vector<unsigned int> TracesId = {};
     map<unsigned int, vector<unsigned int>> GeneratingFractures = {};
-    map<unsigned int, vector<vector<double>>> GeneratingVertices = {};
-
-
-    map<unsigned int, vector<double>> Baricentri = {};
-
+    map<unsigned int, vector<vector<double>>> GeneratingPoints = {};
 
     vector<bool> Tips = {};
     vector<double> LenghtTraces = {};

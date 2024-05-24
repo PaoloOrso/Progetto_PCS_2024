@@ -91,13 +91,10 @@ bool ImportAll(const string &filename, DFN &data)
         getline(file, line);
         convertN.str(line);
         convertN >> id >> tmp >> vertices;
-        data.FracturesId.push_back(id);
+        data.MaxId = id;
         data.NumberVertices.push_back(vertices);
 
         getline(file, line);
-
-
-
 
         getline(file, line);
         replace(line.begin(),line.end(), ';' ,' ');
@@ -165,55 +162,37 @@ bool ImportAll(const string &filename, DFN &data)
 bool Testsfera(DFN &data)
 {
 
-    for(unsigned int id = 0; id != 3; id++)
+    for(unsigned int id = 0; id != (data.MaxId + 1); id++)
     {
-        double x_bari = 0.0;
-        double y_bari = 0.0;
-        double z_bari = 0.0;
+        Vector3d bari;
+        unsigned int num = data.NumberVertices[id];
+
         double tmpx = 0.0;
         double tmpy = 0.0;
         double tmpz = 0.0;
-        vector<double> tmp_bari = {};
 
-        for(unsigned int i = 0; i != 4; i++)
+        for(unsigned int i = 0; i != num; i++)
         {
-            tmpx += data.Vertices[id][i][0];
+            Vector3d point = data.Vertices[id][i];
+            tmpx += point[0];
+            tmpy += point[1];
+            tmpz += point[2];
 
         }
 
-        x_bari = tmpx / 4;
+        bari[0] = tmpx / num;
+        bari[1] = tmpy / num;
+        bari[2] = tmpz / num;
 
-        for(unsigned int i = 0; i != 4; i++ )
-        {
-            tmpy += data.Vertices[id][i][1];
-        }
+        data.Baricentri.push_back(bari);
 
-        y_bari = tmpy / 4;
-
-        for(unsigned int i = 0; i != 4; i++ )
-        {
-            tmpz += data.Vertices[id][i][2];
-        }
-
-        z_bari = tmpz / 4;
-
-        tmp_bari.push_back(x_bari);
-        tmp_bari.push_back(y_bari);
-        tmp_bari.push_back(z_bari);
-
-        data.Baricentri.insert({id,tmp_bari});
-
-    }
-
-    double distance = 0.0;
-
-    for(unsigned int id = 0; id != 3; id++)
-    {
+        double distance = 0.0;
         double maxdistance = 0.0;
 
-        for(unsigned int i = 0; i !=4; i++)
+        for(unsigned int i = 0; i != num; i++)
         {
-            distance = pow(data.Baricentri[id][0] - data.Vertices[id][i][0],2) + pow(data.Baricentri[id][1] - data.Vertices[id][i][1],2) + pow(data.Baricentri[id][2] - data.Vertices[id][i][2],2);
+            Vector3d point = data.Vertices[id][i];
+            distance = sqrt(pow(bari[0] - point[0],2) + pow(bari[1] - point[1],2) + pow(bari[2] - point[2],2));
             if(distance > maxdistance)
             {
                 maxdistance = distance;
@@ -221,7 +200,7 @@ bool Testsfera(DFN &data)
 
         }
 
-        data.raggi.insert({id,maxdistance});
+        data.raggi.push_back(maxdistance);
 
     }
 
@@ -239,8 +218,8 @@ bool Testpianiparalleli(DFN &data)
     Vector3d point2;
     Vector3d u;
     Vector3d v;
-
-    for(unsigned int id = 0; id != 3; id++)
+    
+    for(unsigned int id = 0; id != (data.MaxId + 1); id++)
     {
 
         Vector3d normal;
@@ -259,7 +238,7 @@ bool Testpianiparalleli(DFN &data)
         d = -normal[0]*point0[0] - normal[1]*point0[1] - normal[2]*point0[2];
 
         data.Normals.push_back(normal);
-        data.Directors.insert({id,d});
+        data.Ds.push_back(d);
     }
 
     return true;
@@ -275,16 +254,24 @@ bool Testintersezione(DFN &data)
         for ( unsigned int j = i +1; j != data.NumberFractures; j++)
         {
 
-            // test sfera e piani paralleli
-
-
+            Vector3d bari1 = data.Baricentri[i];
+            Vector3d bari2 = data.Baricentri[j];
 
             Vector3d normale1;
             Vector3d normale2;
-            Vector3d director;
 
             normale1 = data.Normals[i];
             normale2 = data.Normals[j];
+
+            double distanza_bari = sqrt(pow(bari1[0]-bari2[0],2) + pow(bari1[1]-bari2[1],2) + pow(bari1[2]-bari2[2],2));
+            double somma_raggi = data.raggi[i] + data.raggi[j];
+
+            if(( distanza_bari - somma_raggi < 1e-10 ) && ( (normale1.cross(normale2)).norm() > 1e-10 ))
+            {
+
+            vector<double> test = {};
+
+            Vector3d director;
 
             director = normale1.cross(normale2);
 
@@ -295,14 +282,13 @@ bool Testintersezione(DFN &data)
 
             Vector3d b;
 
-            b << -data.Directors[i] , -data.Directors[j],0;
+            b << -data.Ds[i] , -data.Ds[j],0;
 
             Vector3d P0 = A.colPivHouseholderQr().solve(b);  //primo punto sulla retta di intersezione
 
             Vector3d P1 = P0+director;   //secondo punto sulla retta di intersezione
 
-
-            const unsigned int numVertices = data.Vertices[i].size();
+            const unsigned int numVertices = data.NumberVertices[i];
             for(unsigned int w = 0; w < numVertices; w++)
             {
                 const Vector3d punto0 = data.Vertices[i][w];
@@ -335,15 +321,80 @@ bool Testintersezione(DFN &data)
                     double alfa = intersection(0);
                     double beta = intersection(1);
 
-                    cout << alfa << " " << beta << endl;
+                    Vector3d punto = punto0-beta*(punto1-punto0);
 
-                    cout << "punto:" << endl << P0+alfa*(P1-P0) << endl << "punto:" << endl << punto0-beta*(punto1-punto0) << endl;
+                    test.push_back(alfa);
+
+                    cout << "punto poligono " << i << ": " << punto[0] << " , " << punto[1] << " , " << punto[2] << endl;
 
 
+                    const Vector3d punto0 = data.Vertices[j][w];
+                    const Vector3d punto1 = data.Vertices[j][(w + 1) % numVertices];
+
+                    Vector3d diff1 = P1-P0;
+                    Vector3d diff2 = punto1-punto0;
+                    Vector3d diff3 = punto0-P0;
+
+                    Vector3d sos = diff1.cross(diff2);
+
+
+                    if(sos.norm() > 1e-10)
+                    {
+                        Matrix<double,3,2> AA;
+
+                        AA << diff1[0],diff2[0],
+                            diff1[1],diff2[1],
+                            diff1[2],diff2[2];
+
+
+                        Vector3d bb;
+                        bb(0) = diff3[0];
+                        bb(1) = diff3[1];
+                        bb(2) = diff3[2];
+
+
+                        Vector2d intersection = AA.colPivHouseholderQr().solve(bb);
+
+                        double alfa = intersection(0);
+                        double beta = intersection(1);
+
+                        Vector3d Punto = punto0-beta*(punto1-punto0);
+
+                        test.push_back(alfa);
+
+                        cout << "punto poligono " << j << ": " << Punto[0] << " , " << Punto[1] << " , " << Punto[2] << endl;
+
+
+                    }
                 }
-
             }
 
+            cout << endl;
+
+            if( size(test) == 4)
+            {
+                if(abs(test[0] - test[1]) < 1e-10 && abs(test[2] - test[3]) < 1e-10)
+                {
+                    cout << "Due fratture passanti" << endl << endl;
+                }
+                else if(((max(test[0],test[2]) >= max(test[1],test[3])) && (min(test[0],test[2]) <= min(test[1],test[3]))) || ((max(test[1],test[3]) >= max(test[0],test[2])) && (min(test[1],test[3]) <= min(test[0],test[2]))))
+                {
+                    cout << "Una frattura passante e una non passante" << endl << endl;
+                }
+                else if(((max(test[0],test[2]) > min(test[1],test[3])) && (min(test[0],test[2]) < min(test[1],test[3]))) || ((max(test[1],test[3]) > min(test[0],test[2])) && (min(test[1],test[3]) < min(test[0],test[2]))))
+                {
+                    cout << "Due fratture non passanti" << endl << endl;
+                }
+                else if((max(test[0],test[2]) < min(test[1],test[3])) || ((max(test[1],test[3]) < min(test[0],test[2]))))
+                {
+                    cout << "No intersezioni" << endl << endl;
+                }
+            }
+            else
+            {
+                cout << "No intersezioni" << endl << endl;
+            }
+        }
         }
 
     return true;
