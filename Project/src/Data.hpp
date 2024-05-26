@@ -22,12 +22,15 @@ struct DFN
 
 
     unsigned int NumberTraces = 0;
-    vector<unsigned int> TracesId = {};
-    map<unsigned int, vector<unsigned int>> GeneratingFractures = {};
-    map<unsigned int, vector<vector<double>>> GeneratingPoints = {};
 
-    vector<bool> Tips = {};
-    vector<double> LenghtTraces = {};
+    vector<Vector2i> GeneratingFractures;
+    vector<vector<Vector3d>> GeneratingPoints;
+
+    vector<double> LenghtTraces;
+
+    vector<Vector2i> Tips;
+
+    vector<unsigned int> TracesinFigures;
 
 };
 
