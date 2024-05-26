@@ -1,3 +1,5 @@
+// 3 10 50 82 200 362
+// 2 25 481 1 8985 1
 #include "Utils.hpp"
 #include <iostream>
 #include <fstream>
@@ -17,7 +19,8 @@ namespace FracturesTraces
 
 bool ImportData(DFN& data)
 {
-    if(!ImportAll("./FR3_data.txt", data))
+    // 3 10 50 82 200 362
+    if(!ImportAll("./FR362_data.txt", data))
     {
         return false;
     }
@@ -249,6 +252,7 @@ bool Testpianiparalleli(DFN &data)
 
 bool Testintersezione(DFN &data)
 {
+    unsigned int NUMEROINTERSEZIONI = 0;
 
     for (unsigned int i = 0; i != data.NumberFractures;i++ )
         for ( unsigned int j = i +1; j != data.NumberFractures; j++)
@@ -266,14 +270,14 @@ bool Testintersezione(DFN &data)
             double distanza_bari = sqrt(pow(bari1[0]-bari2[0],2) + pow(bari1[1]-bari2[1],2) + pow(bari1[2]-bari2[2],2));
             double somma_raggi = data.raggi[i] + data.raggi[j];
 
-            if(( distanza_bari - somma_raggi < 1e-10 ) && ( (normale1.cross(normale2)).norm() > 1e-10 ))
+            if(( distanza_bari - somma_raggi < 1e-10 ) && ( (normale1.cross(normale2)).norm() > 1e-10 ))  // test baricentro e piani paralleli
             {
 
             vector<double> test = {};
 
             Vector3d director;
 
-            director = normale1.cross(normale2);
+            director = normale1.cross(normale2);     // vettore direttore della retta di intersezione tra i due piani
 
             Matrix3d A;
             A << normale1[0],normale1[1],normale1[2],
@@ -288,11 +292,53 @@ bool Testintersezione(DFN &data)
 
             Vector3d P1 = P0+director;   //secondo punto sulla retta di intersezione
 
-            const unsigned int numVertices = data.NumberVertices[i];
+            unsigned int numVertices = data.NumberVertices[i];
             for(unsigned int w = 0; w < numVertices; w++)
             {
                 const Vector3d punto0 = data.Vertices[i][w];
                 const Vector3d punto1 = data.Vertices[i][(w + 1) % numVertices];
+
+                Vector3d diff1 = P1-P0;
+                Vector3d diff2 = punto1-punto0;
+                Vector3d diff3 = punto0-P0;
+
+                Vector3d sos = diff1.cross(diff2);
+
+                if(sos.norm() > 1e-10)
+                {
+                    Matrix<double,3,2> AA;
+
+                    AA << diff1[0],diff2[0],
+                        diff1[1],diff2[1],
+                        diff1[2],diff2[2];
+
+
+                    Vector3d bb;
+                    bb(0) = diff3[0];
+                    bb(1) = diff3[1];
+                    bb(2) = diff3[2];
+
+
+                    Vector2d intersection = AA.colPivHouseholderQr().solve(bb);
+
+                    double alfa = intersection(0);
+                    double beta = intersection(1);
+
+                    //Vector3d punto = punto0-beta*(punto1-punto0);
+
+                    if(-beta > 0.0 && -beta < 1.0)
+                    {
+                        test.push_back(alfa);
+                        //cout << "punto poligono " << i << ": " << punto[0] << " , " << punto[1] << " , " << punto[2] << endl;
+                    }
+                }
+            }
+
+            numVertices = data.NumberVertices[j];
+            for(unsigned int w = 0; w < numVertices; w++)
+            {
+                const Vector3d punto0 = data.Vertices[j][w];
+                const Vector3d punto1 = data.Vertices[j][(w + 1) % numVertices];
 
                 Vector3d diff1 = P1-P0;
                 Vector3d diff2 = punto1-punto0;
@@ -321,50 +367,12 @@ bool Testintersezione(DFN &data)
                     double alfa = intersection(0);
                     double beta = intersection(1);
 
-                    Vector3d punto = punto0-beta*(punto1-punto0);
+                    //Vector3d Punto = punto0-beta*(punto1-punto0);
 
-                    test.push_back(alfa);
-
-                    cout << "punto poligono " << i << ": " << punto[0] << " , " << punto[1] << " , " << punto[2] << endl;
-
-
-                    const Vector3d punto0 = data.Vertices[j][w];
-                    const Vector3d punto1 = data.Vertices[j][(w + 1) % numVertices];
-
-                    Vector3d diff1 = P1-P0;
-                    Vector3d diff2 = punto1-punto0;
-                    Vector3d diff3 = punto0-P0;
-
-                    Vector3d sos = diff1.cross(diff2);
-
-
-                    if(sos.norm() > 1e-10)
+                    if(-beta > 0.0 && -beta < 1.0)
                     {
-                        Matrix<double,3,2> AA;
-
-                        AA << diff1[0],diff2[0],
-                            diff1[1],diff2[1],
-                            diff1[2],diff2[2];
-
-
-                        Vector3d bb;
-                        bb(0) = diff3[0];
-                        bb(1) = diff3[1];
-                        bb(2) = diff3[2];
-
-
-                        Vector2d intersection = AA.colPivHouseholderQr().solve(bb);
-
-                        double alfa = intersection(0);
-                        double beta = intersection(1);
-
-                        Vector3d Punto = punto0-beta*(punto1-punto0);
-
                         test.push_back(alfa);
-
-                        cout << "punto poligono " << j << ": " << Punto[0] << " , " << Punto[1] << " , " << Punto[2] << endl;
-
-
+                        //cout << "punto poligono " << j << ": " << Punto[0] << " , " << Punto[1] << " , " << Punto[2] << endl;
                     }
                 }
             }
@@ -373,29 +381,34 @@ bool Testintersezione(DFN &data)
 
             if( size(test) == 4)
             {
-                if(abs(test[0] - test[1]) < 1e-10 && abs(test[2] - test[3]) < 1e-10)
+                if(abs(test[0] - test[2]) < 1e-10 && abs(test[1] - test[3]) < 1e-10)
                 {
-                    cout << "Due fratture passanti" << endl << endl;
+                    NUMEROINTERSEZIONI++;
+                    cout << "Due fratture passanti tra poligoni " << i << " e " << j << endl << endl;
                 }
-                else if(((max(test[0],test[2]) >= max(test[1],test[3])) && (min(test[0],test[2]) <= min(test[1],test[3]))) || ((max(test[1],test[3]) >= max(test[0],test[2])) && (min(test[1],test[3]) <= min(test[0],test[2]))))
+                else if(((max(test[0],test[1]) >= max(test[2],test[3])) && (min(test[0],test[1]) <= min(test[2],test[3]))) || ((max(test[2],test[3]) >= max(test[0],test[1])) && (min(test[2],test[3]) <= min(test[0],test[1]))))
                 {
-                    cout << "Una frattura passante e una non passante" << endl << endl;
+                   NUMEROINTERSEZIONI++;
+                    cout << "Una frattura passante e una non passante tra poligoni " << i << " e " << j << endl << endl;
                 }
-                else if(((max(test[0],test[2]) > min(test[1],test[3])) && (min(test[0],test[2]) < min(test[1],test[3]))) || ((max(test[1],test[3]) > min(test[0],test[2])) && (min(test[1],test[3]) < min(test[0],test[2]))))
+                else if(((max(test[0],test[1]) > min(test[2],test[3])) && (min(test[0],test[1]) < min(test[2],test[3]))) || ((max(test[2],test[3]) > min(test[0],test[1])) && (min(test[2],test[3]) < min(test[0],test[1]))))
                 {
-                    cout << "Due fratture non passanti" << endl << endl;
+                    NUMEROINTERSEZIONI++;
+                    cout << "Due fratture non passanti tra poligoni " << i << " e " << j << endl << endl;
                 }
-                else if((max(test[0],test[2]) < min(test[1],test[3])) || ((max(test[1],test[3]) < min(test[0],test[2]))))
-                {
-                    cout << "No intersezioni" << endl << endl;
-                }
+                // else if((max(test[0],test[1]) < min(test[2],test[3])) || ((max(test[2],test[3]) < min(test[0],test[1]))))
+                // {
+                //     cout << "No intersezioni" << endl << endl;
+                // }
             }
-            else
-            {
-                cout << "No intersezioni" << endl << endl;
-            }
+            // else
+            // {
+            //     cout << "No intersezioni" << endl << endl;
+            // }
         }
         }
+
+    cout << "Numero intersezioni: " << NUMEROINTERSEZIONI << endl;
 
     return true;
 
