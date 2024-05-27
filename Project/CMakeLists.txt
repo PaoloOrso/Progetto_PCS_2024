@@ -48,6 +48,12 @@ list(APPEND ${CMAKE_PROJECT_NAME}_includes ${src_includes})
 #############################################################################
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/DFN/FR3_data.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/DFN/FR10_data.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/DFN/FR50_data.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/DFN/FR82_data.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/DFN/FR200_data.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/DFN/FR362_data.txt DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )
+
 
 # Create executable
 ################################################################################
