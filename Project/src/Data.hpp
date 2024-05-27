@@ -32,6 +32,10 @@ struct DFN
 
     vector<unsigned int> TracesinFigures;
 
-};
+
+    vector<vector<unsigned int>> IdTraces;
+    vector<vector<bool>> BoolTraces;
+
+};    
 
 }

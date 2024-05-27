@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <cmath>
 #include <Eigen/Eigen>
+#include <algorithm>
 
 using namespace Eigen;
 
@@ -20,7 +21,7 @@ namespace FracturesTraces
 bool ImportData(DFN& data)
 {
     // 3 10 50 82 200 362
-    if(!ImportAll("./FR10_data.txt", data))
+    if(!ImportAll("./FR3_data.txt", data))
     {
         return false;
     }
@@ -248,6 +249,11 @@ bool Testintersezione(DFN &data)
 {
     unsigned int NUMEROINTERSEZIONI = 0;
     vector<unsigned int> Frig_frac(data.NumberFractures);
+    for(unsigned int k = 0; k!= data.NumberFractures;k++)
+        {
+        data.IdTraces.push_back({});
+        data.BoolTraces.push_back({});
+        }
 
     for (unsigned int i = 0; i != data.NumberFractures;i++ )
         for ( unsigned int j = i +1; j != data.NumberFractures; j++)
@@ -318,12 +324,12 @@ bool Testintersezione(DFN &data)
                     double alfa = intersection(0);
                     double beta = intersection(1);
 
-                    // Vector3d punto = punto0-beta*(punto1-punto0);
+                    Vector3d punto = punto0-beta*(punto1-punto0);
 
                     if(-beta > 0.0 && -beta < 1.0)
                     {
                         test.push_back(alfa);
-                        //cout << "punto poligono " << i << ": " << punto[0] << " , " << punto[1] << " , " << punto[2] << endl;
+                        cout << "punto poligono " << i << ": " << punto[0] << " , " << punto[1] << " , " << punto[2] << endl;
                     }
                 }
             }
@@ -361,12 +367,12 @@ bool Testintersezione(DFN &data)
                     double alfa = intersection(0);
                     double beta = intersection(1);
 
-                    // Vector3d Punto = punto0-beta*(punto1-punto0);
+                    Vector3d Punto = punto0-beta*(punto1-punto0);
 
                     if(-beta > 0.0 && -beta < 1.0)
                     {
                         test.push_back(alfa);
-                        //cout << "punto poligono " << j << ": " << Punto[0] << " , " << Punto[1] << " , " << Punto[2] << endl;
+                        cout << "punto poligono " << j << ": " << Punto[0] << " , " << Punto[1] << " , " << Punto[2] << endl;
                     }
                 }
             }
@@ -382,12 +388,20 @@ bool Testintersezione(DFN &data)
                 vector<Vector3d> gen_points;
                 Vector3d PT0;
                 Vector3d PT1;
+                vector<double> tmp;
 
-                delta_alfa = abs(test[1]-test[2]);
+                tmp = test;
+
+                sort(tmp.begin(),tmp.begin()+4);
+
+                delta_alfa = abs(tmp[1]-tmp[2]);
 
                 lunghezza = delta_alfa * director.norm();
 
                 gen_frac = {i,j};
+
+                data.IdTraces[i].push_back(NUMEROINTERSEZIONI);
+                data.IdTraces[j].push_back(NUMEROINTERSEZIONI);
 
                 PT0 = P0 + test[1]*(P1-P0);
                 PT1 = P0 + test[2]*(P1-P0);
@@ -401,6 +415,8 @@ bool Testintersezione(DFN &data)
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
                     data.Tips.push_back({1,1});
+                    data.BoolTraces[i].push_back(true);
+                    data.BoolTraces[j].push_back(true);
                     Frig_frac[i]++;
                     Frig_frac[j]++;
                     cout << "Due fratture passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
@@ -411,7 +427,18 @@ bool Testintersezione(DFN &data)
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
-                    data.Tips.push_back({0,1});  // sistema l'ordine di 1 e 0 nei due casi
+                    if((test[0] >= min(test[2],test[3]) && test[0] <= max(test[2],test[3]))  && (test[1] >= min(test[2],test[3]) && test[1] <= max(test[2],test[3])))
+                    {
+                        data.Tips.push_back({1,0});
+                        data.BoolTraces[i].push_back(true);
+                        data.BoolTraces[j].push_back(false);
+                    }
+                    else
+                    {
+                        data.Tips.push_back({0,1});
+                        data.BoolTraces[i].push_back(false);
+                        data.BoolTraces[j].push_back(true);
+                    }
                     Frig_frac[i]++;
                     Frig_frac[j]++;
                     cout << "Una frattura passante e una non passante tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
@@ -423,6 +450,8 @@ bool Testintersezione(DFN &data)
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
                     data.Tips.push_back({0,0});
+                    data.BoolTraces[i].push_back(false);
+                    data.BoolTraces[j].push_back(false);
                     Frig_frac[i]++;
                     Frig_frac[j]++;
                     cout << "Due fratture non passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
@@ -448,6 +477,8 @@ bool Testintersezione(DFN &data)
 }
 
 //---------------------------------STAMPA-RISULTATI-----------------------------------------------------------------------------
+
+
 
 
 }
