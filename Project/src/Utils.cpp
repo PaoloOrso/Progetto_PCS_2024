@@ -20,7 +20,7 @@ namespace FracturesTraces
 bool ImportData(DFN& data)
 {
     // 3 10 50 82 200 362
-    if(!ImportAll("./FR10_data.txt", data))
+    if(!ImportAll("./FR200_data.txt", data))
     {
         return false;
     }
@@ -40,11 +40,7 @@ bool ImportData(DFN& data)
         return false;
     }
 
-
-
     return true;
-
-
 }
 
 //--------------------------------INIZIALIZZO-LA-MAPPA-CHE-ASSOCIA-ID-A-UN-VETTORE-DI-VETTORI-CHE-DEFINISCE-LE-COORDINATE-------
@@ -61,9 +57,7 @@ bool ImportAll(const string &filename, DFN &data)
     }
 
     string line;
-
     unsigned int NFractures = 0;
-
     istringstream convertN(line);
 
     getline(file, line);
@@ -253,6 +247,7 @@ bool Testpianiparalleli(DFN &data)
 bool Testintersezione(DFN &data)
 {
     unsigned int NUMEROINTERSEZIONI = 0;
+    vector<unsigned int> Frig_frac(data.NumberFractures);
 
     for (unsigned int i = 0; i != data.NumberFractures;i++ )
         for ( unsigned int j = i +1; j != data.NumberFractures; j++)
@@ -406,6 +401,8 @@ bool Testintersezione(DFN &data)
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
                     data.Tips.push_back({1,1});
+                    Frig_frac[i]++;
+                    Frig_frac[j]++;
                     cout << "Due fratture passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
                 }
                 else if(((max(test[0],test[1]) >= max(test[2],test[3])) && (min(test[0],test[1]) <= min(test[2],test[3]))) || ((max(test[2],test[3]) >= max(test[0],test[1])) && (min(test[2],test[3]) <= min(test[0],test[1]))))
@@ -415,6 +412,8 @@ bool Testintersezione(DFN &data)
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
                     data.Tips.push_back({0,1});  // sistema l'ordine di 1 e 0 nei due casi
+                    Frig_frac[i]++;
+                    Frig_frac[j]++;
                     cout << "Una frattura passante e una non passante tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
                 }
                 else if(((max(test[0],test[1]) > min(test[2],test[3])) && (min(test[0],test[1]) < min(test[2],test[3]))) || ((max(test[2],test[3]) > min(test[0],test[1])) && (min(test[2],test[3]) < min(test[0],test[1]))))
@@ -424,6 +423,8 @@ bool Testintersezione(DFN &data)
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
                     data.Tips.push_back({0,0});
+                    Frig_frac[i]++;
+                    Frig_frac[j]++;
                     cout << "Due fratture non passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
                 }
                 // else if((max(test[0],test[1]) < min(test[2],test[3])) || ((max(test[2],test[3]) < min(test[0],test[1]))))
@@ -439,10 +440,14 @@ bool Testintersezione(DFN &data)
         }
 
     data.NumberTraces = NUMEROINTERSEZIONI;
+    data.TracesinFigures = Frig_frac;
     cout << "Numero intersezioni: " << NUMEROINTERSEZIONI << endl;
 
     return true;
 
 }
+
+//---------------------------------STAMPA-RISULTATI-----------------------------------------------------------------------------
+
 
 }

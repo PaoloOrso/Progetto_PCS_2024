@@ -21,7 +21,7 @@ struct DFN
     vector<double> Ds;
 
 
-    unsigned int NumberTraces = 0;
+    unsigned int NumberTraces;
 
     vector<Vector2i> GeneratingFractures;
     vector<vector<Vector3d>> GeneratingPoints;
