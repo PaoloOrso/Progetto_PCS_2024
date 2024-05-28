@@ -258,6 +258,7 @@ bool Testintersezione(DFN &data)
         {
         data.IdTraces.push_back({});
         data.BoolTraces.push_back({});
+        data.Id_Lenght_Fractures.push_back({});
         }
 
     for (unsigned int i = 0; i != data.NumberFractures;i++ )
@@ -410,13 +411,16 @@ bool Testintersezione(DFN &data)
 
                 gen_points = {PT0,PT1};
 
+
                 if(abs(test[0] - test[2]) < 1e-10 && abs(test[1] - test[3]) < 1e-10)
                 {
-
+                    pair<unsigned int, double> coppia(NUMEROINTERSEZIONI,lunghezza);
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
-                    data.Id_Lenght.push_back({NUMEROINTERSEZIONI,lunghezza});
+                  //  data.Id_Lenght.push_back({NUMEROINTERSEZIONI,lunghezza});
+                    data.Id_Lenght_Fractures[i].push_back(coppia);
+                    data.Id_Lenght_Fractures[j].push_back(coppia);
                     data.Tips.push_back({true,true});
                     data.BoolTraces[i].push_back(true);
                     data.BoolTraces[j].push_back(true);
@@ -429,11 +433,13 @@ bool Testintersezione(DFN &data)
                 }
                 else if(((max(test[0],test[1]) >= max(test[2],test[3])) && (min(test[0],test[1]) <= min(test[2],test[3]))) || ((max(test[2],test[3]) >= max(test[0],test[1])) && (min(test[2],test[3]) <= min(test[0],test[1]))))
                 {
-
+                    pair<unsigned int, double> coppia(NUMEROINTERSEZIONI,lunghezza);
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
-                    data.Id_Lenght.push_back({NUMEROINTERSEZIONI,lunghezza});
+                   // data.Id_Lenght.push_back({NUMEROINTERSEZIONI,lunghezza});
+                    data.Id_Lenght_Fractures[i].push_back(coppia);
+                    data.Id_Lenght_Fractures[j].push_back(coppia);
                     if((test[0] >= min(test[2],test[3]) && test[0] <= max(test[2],test[3]))  && (test[1] >= min(test[2],test[3]) && test[1] <= max(test[2],test[3])))
                     {
                         data.Tips.push_back({true,false});
@@ -455,11 +461,13 @@ bool Testintersezione(DFN &data)
                 }
                 else if(((max(test[0],test[1]) > min(test[2],test[3])) && (min(test[0],test[1]) < min(test[2],test[3]))) || ((max(test[2],test[3]) > min(test[0],test[1])) && (min(test[2],test[3]) < min(test[0],test[1]))))
                 {
-
+                    pair<unsigned int, double> coppia(NUMEROINTERSEZIONI,lunghezza);
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
-                    data.Id_Lenght.push_back({NUMEROINTERSEZIONI,lunghezza});
+                 //   data.Id_Lenght.push_back({NUMEROINTERSEZIONI,lunghezza});
+                    data.Id_Lenght_Fractures[i].push_back(coppia);
+                    data.Id_Lenght_Fractures[j].push_back(coppia);
                     data.Tips.push_back({false,false});
                     data.BoolTraces[i].push_back(false);
                     data.BoolTraces[j].push_back(false);
@@ -484,10 +492,13 @@ bool Testintersezione(DFN &data)
 
     data.NumberTraces = NUMEROINTERSEZIONI;
     data.TracesinFigures = Frig_frac;
-    sort(data.Id_Lenght.begin(), data.Id_Lenght.end(), [](const pair<unsigned int, double>& a, const pair<unsigned int,double>& b)
+    for(unsigned int k = 0; k!= data.NumberFractures;k++)
     {
-        return a.second > b.second;
-    });
+        sort(data.Id_Lenght_Fractures[k].begin(), data.Id_Lenght_Fractures[k].end(), [](const pair<unsigned int, double>& a, const pair<unsigned int,double>& b)
+        {
+            return a.second > b.second;
+        });
+    }
 
    // cout << "Numero intersezioni: " << NUMEROINTERSEZIONI << endl;
 
@@ -499,32 +510,32 @@ bool Testintersezione(DFN &data)
 
 bool Stampa(DFN &data)
 {
-    ofstream out("result.txt");
+   // ofstream out("result.txt");
 
-    out << "# Number of Traces" << endl << data.NumberTraces << endl << endl;
+    cout << "# Number of Traces" << endl << data.NumberTraces << endl << endl;
     for(unsigned int t = 0; t != data.NumberTraces; t++)
     {
-        out << "# TraceId; FractureId1; FractureId2; X1; Y1; Z1; X2; Y2; Z2" << endl;
-        out << t << " ; " << data.GeneratingFractures[t][0] << " , " << data.GeneratingFractures[t][1] << " ; ";
-        out << data.GeneratingPoints[t][0][0] << " , " << data.GeneratingPoints[t][0][1] << " , " << data.GeneratingPoints[t][0][2] << " ; ";
-        out << data.GeneratingPoints[t][1][0] << " , " << data.GeneratingPoints[t][1][1] << " , " << data.GeneratingPoints[t][1][2] << endl;
+        cout << "# TraceId; FractureId1; FractureId2; X1; Y1; Z1; X2; Y2; Z2" << endl;
+        cout << t << " ; " << data.GeneratingFractures[t][0] << " , " << data.GeneratingFractures[t][1] << " ; ";
+        cout << data.GeneratingPoints[t][0][0] << " , " << data.GeneratingPoints[t][0][1] << " , " << data.GeneratingPoints[t][0][2] << " ; ";
+        cout << data.GeneratingPoints[t][1][0] << " , " << data.GeneratingPoints[t][1][1] << " , " << data.GeneratingPoints[t][1][2] << endl;
     }
-    out << endl;
+    cout << endl;
     for(unsigned int id = 0; id != data.NumberFractures; id++)
     {
         if(size(data.IdTraces[id]) != 0)
         {
-        out << "# FractureId; NumTraces" << endl << id << " ; " << data.TracesinFigures[id] << endl;
-        out << "# TraceId; Tips; Lenght" << endl;
-        for(unsigned int l = 0; l != size(data.IdTraces[id]); l++)
+        cout << "# FractureId; NumTraces" << endl << id << " ; " << data.TracesinFigures[id] << endl;
+        cout << "# TraceId; Tips; Lenght" << endl;
+        for(unsigned int l = 0; l != size(data.Id_Lenght_Fractures[id]); l++)
         {
-            out << data.IdTraces[id][l] << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << data.LenghtTraces[data.IdTraces[id][l]] << endl;
+            cout << (data.Id_Lenght_Fractures[id][l]).first << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << (data.Id_Lenght_Fractures[id][l]).second << endl;
 
         }
-        out << endl;
+        cout << endl;
         }
     }
-    out.close();
+    //out.close();
 
     return true;
 }

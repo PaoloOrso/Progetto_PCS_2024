@@ -39,7 +39,9 @@ struct DFN
     map<unsigned int, double> Idpassanti;
     map<unsigned int, double> Idnonpassanti;
 
-    vector<pair<unsigned int,double>> Id_Lenght;
+   // vector<pair<unsigned int,double>> Id_Lenght;
+    vector<vector<pair<unsigned int,double>>> Id_Lenght_Fractures;
+
 
 
 
