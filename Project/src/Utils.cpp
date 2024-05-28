@@ -21,7 +21,7 @@ namespace FracturesTraces
 bool ImportData(DFN& data)
 {
     // 3 10 50 82 200 362
-    if(!ImportAll("./FR3_data.txt", data))
+    if(!ImportAll("./FR200_data.txt", data))
     {
         return false;
     }
@@ -37,6 +37,11 @@ bool ImportData(DFN& data)
     }
 
     if(!Testintersezione(data))
+    {
+        return false;
+    }
+
+    if(!Stampa(data))
     {
         return false;
     }
@@ -329,7 +334,7 @@ bool Testintersezione(DFN &data)
                     if(-beta > 0.0 && -beta < 1.0)
                     {
                         test.push_back(alfa);
-                        cout << "punto poligono " << i << ": " << punto[0] << " , " << punto[1] << " , " << punto[2] << endl;
+                       // cout << "punto poligono " << i << ": " << punto[0] << " , " << punto[1] << " , " << punto[2] << endl;
                     }
                 }
             }
@@ -372,7 +377,7 @@ bool Testintersezione(DFN &data)
                     if(-beta > 0.0 && -beta < 1.0)
                     {
                         test.push_back(alfa);
-                        cout << "punto poligono " << j << ": " << Punto[0] << " , " << Punto[1] << " , " << Punto[2] << endl;
+                       // cout << "punto poligono " << j << ": " << Punto[0] << " , " << Punto[1] << " , " << Punto[2] << endl;
                     }
                 }
             }
@@ -410,51 +415,54 @@ bool Testintersezione(DFN &data)
 
                 if(abs(test[0] - test[2]) < 1e-10 && abs(test[1] - test[3]) < 1e-10)
                 {
-                    NUMEROINTERSEZIONI++;
+
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
-                    data.Tips.push_back({1,1});
+                    data.Tips.push_back({true,true});
                     data.BoolTraces[i].push_back(true);
                     data.BoolTraces[j].push_back(true);
                     Frig_frac[i]++;
                     Frig_frac[j]++;
-                    cout << "Due fratture passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
+                    NUMEROINTERSEZIONI++;
+                    //cout << "Due fratture passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
                 }
                 else if(((max(test[0],test[1]) >= max(test[2],test[3])) && (min(test[0],test[1]) <= min(test[2],test[3]))) || ((max(test[2],test[3]) >= max(test[0],test[1])) && (min(test[2],test[3]) <= min(test[0],test[1]))))
                 {
-                    NUMEROINTERSEZIONI++;
+
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
                     if((test[0] >= min(test[2],test[3]) && test[0] <= max(test[2],test[3]))  && (test[1] >= min(test[2],test[3]) && test[1] <= max(test[2],test[3])))
                     {
-                        data.Tips.push_back({1,0});
+                        data.Tips.push_back({true,false});
                         data.BoolTraces[i].push_back(true);
                         data.BoolTraces[j].push_back(false);
                     }
                     else
                     {
-                        data.Tips.push_back({0,1});
+                        data.Tips.push_back({false,true});
                         data.BoolTraces[i].push_back(false);
                         data.BoolTraces[j].push_back(true);
                     }
                     Frig_frac[i]++;
                     Frig_frac[j]++;
-                    cout << "Una frattura passante e una non passante tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
+                    NUMEROINTERSEZIONI++;
+                   // cout << "Una frattura passante e una non passante tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
                 }
                 else if(((max(test[0],test[1]) > min(test[2],test[3])) && (min(test[0],test[1]) < min(test[2],test[3]))) || ((max(test[2],test[3]) > min(test[0],test[1])) && (min(test[2],test[3]) < min(test[0],test[1]))))
                 {
-                    NUMEROINTERSEZIONI++;
+
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
-                    data.Tips.push_back({0,0});
+                    data.Tips.push_back({false,false});
                     data.BoolTraces[i].push_back(false);
                     data.BoolTraces[j].push_back(false);
                     Frig_frac[i]++;
                     Frig_frac[j]++;
-                    cout << "Due fratture non passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
+                    NUMEROINTERSEZIONI++;
+                   // cout << "Due fratture non passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
                 }
                 // else if((max(test[0],test[1]) < min(test[2],test[3])) || ((max(test[2],test[3]) < min(test[0],test[1]))))
                 // {
@@ -470,7 +478,7 @@ bool Testintersezione(DFN &data)
 
     data.NumberTraces = NUMEROINTERSEZIONI;
     data.TracesinFigures = Frig_frac;
-    cout << "Numero intersezioni: " << NUMEROINTERSEZIONI << endl;
+   // cout << "Numero intersezioni: " << NUMEROINTERSEZIONI << endl;
 
     return true;
 
@@ -478,7 +486,36 @@ bool Testintersezione(DFN &data)
 
 //---------------------------------STAMPA-RISULTATI-----------------------------------------------------------------------------
 
+bool Stampa(DFN &data)
+{
+    ofstream out("result.txt");
 
+    out << "# Number of Traces" << endl << data.NumberTraces << endl << endl;
+    for(unsigned int t = 0; t != data.NumberTraces; t++)
+    {
+        out << "# TraceId; FractureId1; FractureId2; X1; Y1; Z1; X2; Y2; Z2" << endl;
+        out << t << " ; " << data.GeneratingFractures[t][0] << " , " << data.GeneratingFractures[t][1] << " ; ";
+        out << data.GeneratingPoints[t][0][0] << " , " << data.GeneratingPoints[t][0][1] << " , " << data.GeneratingPoints[t][0][2] << " ; ";
+        out << data.GeneratingPoints[t][1][0] << " , " << data.GeneratingPoints[t][1][1] << " , " << data.GeneratingPoints[t][1][2] << endl;
+    }
+    out << endl;
+    for(unsigned int id = 0; id != data.NumberFractures; id++)
+    {
+        if(size(data.IdTraces[id]) != 0)
+        {
+        out << "# FractureId; NumTraces" << endl << id << " ; " << data.TracesinFigures[id] << endl;
+        out << "# TraceId; Tips; Lenght" << endl;
+        for(unsigned int l = 0; l != size(data.IdTraces[id]); l++)
+        {
+            out << data.IdTraces[id][l] << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << data.LenghtTraces[data.IdTraces[id][l]] << endl;
 
+        }
+        out << endl;
+        }
+    }
+    out.close();
+
+    return true;
+}
 
 }

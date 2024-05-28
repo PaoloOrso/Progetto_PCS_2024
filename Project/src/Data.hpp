@@ -28,13 +28,18 @@ struct DFN
 
     vector<double> LenghtTraces;
 
-    vector<Vector2i> Tips;
+    vector<vector<bool>> Tips;
 
     vector<unsigned int> TracesinFigures;
 
 
     vector<vector<unsigned int>> IdTraces;
     vector<vector<bool>> BoolTraces;
+
+    map<unsigned int, double> Idpassanti;
+    map<unsigned int, double> Idnonpassanti;
+
+
 
 };    
 

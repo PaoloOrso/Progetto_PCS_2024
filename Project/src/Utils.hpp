@@ -19,4 +19,7 @@ bool Testpianiparalleli(DFN &data);
 
 bool Testintersezione(DFN &data);
 
+bool Stampa(DFN &data);
+
+
 }
