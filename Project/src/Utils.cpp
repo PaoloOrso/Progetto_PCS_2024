@@ -21,7 +21,7 @@ namespace FracturesTraces
 bool ImportData(DFN& data)
 {
     // 3 10 50 82 200 362
-    if(!ImportAll("./FR200_data.txt", data))
+    if(!ImportAll("./FR10_data.txt", data))
     {
         return false;
     }
@@ -419,6 +419,7 @@ bool Testintersezione(DFN &data)
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
+                    data.Id_Lenght.push_back({NUMEROINTERSEZIONI,lunghezza});
                     data.Tips.push_back({true,true});
                     data.BoolTraces[i].push_back(true);
                     data.BoolTraces[j].push_back(true);
@@ -433,6 +434,7 @@ bool Testintersezione(DFN &data)
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
+                    data.Id_Lenght.push_back({NUMEROINTERSEZIONI,lunghezza});
                     if((test[0] >= min(test[2],test[3]) && test[0] <= max(test[2],test[3]))  && (test[1] >= min(test[2],test[3]) && test[1] <= max(test[2],test[3])))
                     {
                         data.Tips.push_back({true,false});
@@ -456,6 +458,7 @@ bool Testintersezione(DFN &data)
                     data.GeneratingFractures.push_back(gen_frac);
                     data.GeneratingPoints.push_back(gen_points);
                     data.LenghtTraces.push_back(lunghezza);
+                    data.Id_Lenght.push_back({NUMEROINTERSEZIONI,lunghezza});
                     data.Tips.push_back({false,false});
                     data.BoolTraces[i].push_back(false);
                     data.BoolTraces[j].push_back(false);
@@ -478,6 +481,11 @@ bool Testintersezione(DFN &data)
 
     data.NumberTraces = NUMEROINTERSEZIONI;
     data.TracesinFigures = Frig_frac;
+    sort(data.Id_Lenght.begin(), data.Id_Lenght.end(), [](const pair<unsigned int, double>& a, const pair<unsigned int,double>& b)
+    {
+        return a.second > b.second;
+    });
+
    // cout << "Numero intersezioni: " << NUMEROINTERSEZIONI << endl;
 
     return true;
