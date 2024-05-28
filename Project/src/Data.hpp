@@ -12,7 +12,7 @@ struct DFN
     unsigned int NumberFractures;
     unsigned int MaxId;
     vector<unsigned int> NumberVertices;
-    map<unsigned int, vector<Vector3d>> Vertices;
+    vector<vector<Vector3d>> Vertices;
 
     vector<Vector3d> Baricentri;
     vector<double> raggi;
@@ -35,9 +35,6 @@ struct DFN
 
     vector<vector<unsigned int>> IdTraces;
     vector<vector<bool>> BoolTraces;
-
-    map<unsigned int, double> Idpassanti;
-    map<unsigned int, double> Idnonpassanti;
 
    // vector<pair<unsigned int,double>> Id_Lenght;
     vector<vector<pair<unsigned int,double>>> Id_Lenght_Fractures;

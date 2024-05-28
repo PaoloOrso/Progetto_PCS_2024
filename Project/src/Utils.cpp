@@ -21,7 +21,7 @@ namespace FracturesTraces
 bool ImportData(DFN& data)
 {
     // 3 10 50 82 200 362
-    if(!ImportAll("./FR10_data.txt", data))
+    if(!ImportAll("./FR200_data.txt", data))
     {
         return false;
     }
@@ -150,7 +150,7 @@ bool ImportAll(const string &filename, DFN &data)
 
         }
 
-        data.Vertices.insert({id,Vertices});
+        data.Vertices.push_back(Vertices);
 
         getline(file, line);
 
@@ -510,32 +510,42 @@ bool Testintersezione(DFN &data)
 
 bool Stampa(DFN &data)
 {
-   // ofstream out("result.txt");
+    ofstream out("result.txt");
 
-    cout << "# Number of Traces" << endl << data.NumberTraces << endl << endl;
+    out << "# Number of Traces" << endl << data.NumberTraces << endl << endl;
     for(unsigned int t = 0; t != data.NumberTraces; t++)
     {
-        cout << "# TraceId; FractureId1; FractureId2; X1; Y1; Z1; X2; Y2; Z2" << endl;
-        cout << t << " ; " << data.GeneratingFractures[t][0] << " , " << data.GeneratingFractures[t][1] << " ; ";
-        cout << data.GeneratingPoints[t][0][0] << " , " << data.GeneratingPoints[t][0][1] << " , " << data.GeneratingPoints[t][0][2] << " ; ";
-        cout << data.GeneratingPoints[t][1][0] << " , " << data.GeneratingPoints[t][1][1] << " , " << data.GeneratingPoints[t][1][2] << endl;
+        out << "# TraceId; FractureId1; FractureId2; X1; Y1; Z1; X2; Y2; Z2" << endl;
+        out << t << " ; " << data.GeneratingFractures[t][0] << " , " << data.GeneratingFractures[t][1] << " ; ";
+        out << data.GeneratingPoints[t][0][0] << " , " << data.GeneratingPoints[t][0][1] << " , " << data.GeneratingPoints[t][0][2] << " ; ";
+        out << data.GeneratingPoints[t][1][0] << " , " << data.GeneratingPoints[t][1][1] << " , " << data.GeneratingPoints[t][1][2] << endl;
     }
-    cout << endl;
+    out << endl;
     for(unsigned int id = 0; id != data.NumberFractures; id++)
     {
         if(size(data.IdTraces[id]) != 0)
         {
-        cout << "# FractureId; NumTraces" << endl << id << " ; " << data.TracesinFigures[id] << endl;
-        cout << "# TraceId; Tips; Lenght" << endl;
+        out << "# FractureId; NumTraces" << endl << id << " ; " << data.TracesinFigures[id] << endl;
+        out << "# TraceId; Tips; Lenght" << endl;
         for(unsigned int l = 0; l != size(data.Id_Lenght_Fractures[id]); l++)
         {
-            cout << (data.Id_Lenght_Fractures[id][l]).first << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << (data.Id_Lenght_Fractures[id][l]).second << endl;
-
+            if(data.BoolTraces[id][l] == true)
+            {
+            out << (data.Id_Lenght_Fractures[id][l]).first << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << (data.Id_Lenght_Fractures[id][l]).second << endl;
+            }
         }
-        cout << endl;
+
+        for(unsigned int l = 0; l != size(data.Id_Lenght_Fractures[id]); l++)
+        {
+            if(data.BoolTraces[id][l] == false)
+            {
+                out << (data.Id_Lenght_Fractures[id][l]).first << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << (data.Id_Lenght_Fractures[id][l]).second << endl;
+            }
+        }
+        out << endl;
         }
     }
-    //out.close();
+    out.close();
 
     return true;
 }
