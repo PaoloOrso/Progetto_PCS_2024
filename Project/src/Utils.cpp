@@ -329,7 +329,7 @@ bool Testintersezione(DFN &data)
                     double alfa = intersection(0);
                     double beta = intersection(1);
 
-                    Vector3d punto = punto0-beta*(punto1-punto0);
+                   // Vector3d punto = punto0-beta*(punto1-punto0);
 
                     if(-beta > 0.0 && -beta < 1.0)
                     {
@@ -372,7 +372,7 @@ bool Testintersezione(DFN &data)
                     double alfa = intersection(0);
                     double beta = intersection(1);
 
-                    Vector3d Punto = punto0-beta*(punto1-punto0);
+                   // Vector3d Punto = punto0-beta*(punto1-punto0);
 
                     if(-beta > 0.0 && -beta < 1.0)
                     {
@@ -405,9 +405,6 @@ bool Testintersezione(DFN &data)
 
                 gen_frac = {i,j};
 
-                data.IdTraces[i].push_back(NUMEROINTERSEZIONI);
-                data.IdTraces[j].push_back(NUMEROINTERSEZIONI);
-
                 PT0 = P0 + test[1]*(P1-P0);
                 PT1 = P0 + test[2]*(P1-P0);
 
@@ -425,6 +422,8 @@ bool Testintersezione(DFN &data)
                     data.BoolTraces[j].push_back(true);
                     Frig_frac[i]++;
                     Frig_frac[j]++;
+                    data.IdTraces[i].push_back(NUMEROINTERSEZIONI);
+                    data.IdTraces[j].push_back(NUMEROINTERSEZIONI);
                     NUMEROINTERSEZIONI++;
                     //cout << "Due fratture passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
                 }
@@ -449,6 +448,8 @@ bool Testintersezione(DFN &data)
                     }
                     Frig_frac[i]++;
                     Frig_frac[j]++;
+                    data.IdTraces[i].push_back(NUMEROINTERSEZIONI);
+                    data.IdTraces[j].push_back(NUMEROINTERSEZIONI);
                     NUMEROINTERSEZIONI++;
                    // cout << "Una frattura passante e una non passante tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
                 }
@@ -464,6 +465,8 @@ bool Testintersezione(DFN &data)
                     data.BoolTraces[j].push_back(false);
                     Frig_frac[i]++;
                     Frig_frac[j]++;
+                    data.IdTraces[i].push_back(NUMEROINTERSEZIONI);
+                    data.IdTraces[j].push_back(NUMEROINTERSEZIONI);
                     NUMEROINTERSEZIONI++;
                    // cout << "Due fratture non passanti tra poligoni " << i << " e " << j << " di lunghezza " << lunghezza << endl << endl;
                 }
