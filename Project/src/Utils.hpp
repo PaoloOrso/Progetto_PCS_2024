@@ -9,7 +9,7 @@ using namespace Eigen;
 
 namespace FracturesTraces
 {
-bool ImportData(DFN& data);
+bool FinalTest(DFN& data);
 
 bool ImportAll(const string &filename, DFN& data);
 

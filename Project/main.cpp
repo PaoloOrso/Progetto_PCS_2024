@@ -12,7 +12,7 @@ int main()
     DFN data;
 
     string filepath = "DFN";
-    if(!ImportData(data))
+    if(!FinalTest(data))
     {
         return 1;
 
