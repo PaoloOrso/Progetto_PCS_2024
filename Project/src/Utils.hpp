@@ -13,7 +13,7 @@ bool FinalTest(DFN& data);
 
 bool ImportAll(const string &filename, DFN& data);
 
-bool Testsfera(DFN &data);
+bool Createspheres(DFN &data);
 
 bool Testpianiparalleli(DFN &data);
 

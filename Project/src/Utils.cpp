@@ -21,12 +21,12 @@ namespace FracturesTraces
 bool FinalTest(DFN& data)
 {
     // 3 10 50 82 200 362
-    if(!ImportAll("./FR200_data2.txt", data))
+    if(!ImportAll("./FR10_data.txt", data))
     {
         return false;
     }
 
-    if(!Testsfera(data))
+    if(!Createspheres(data))
     {
         return false;
     }
@@ -49,7 +49,7 @@ bool FinalTest(DFN& data)
     return true;
 }
 
-//--------------------------------INIZIALIZZO-LA-MAPPA-CHE-ASSOCIA-ID-A-UN-VETTORE-DI-VETTORI-CHE-DEFINISCE-LE-COORDINATE-------
+//------INIZIALIZZO-N.FRATTURE--MAX.ID--VETTORE-DI-N.VERTICI--VETTORE-DEI-VERTICI---------------------------------------------
 
 bool ImportAll(const string &filename, DFN &data)
 {
@@ -70,22 +70,20 @@ bool ImportAll(const string &filename, DFN &data)
     getline(file, line);
     convertN.str(line);
     convertN >> NFractures;
-    data.NumberFractures = NFractures;
+    data.N_Fractures = NFractures;
     getline(file,line);
 
     for(unsigned int i = 0; i != NFractures; i++)
     {
         istringstream convertN(line);
-        unsigned int id;
-        unsigned int vertices;
-        char tmp;
-        double coordx;
-        double coordy;
-        double coordz;
 
-        vector<double> coordinatesx;
-        vector<double> coordinatesy;
-        vector<double> coordinatesz;
+        unsigned int id, vertices;
+
+        char tmp;
+
+        double coordx, coordy, coordz;
+
+        vector<double> coordinatesx, coordinatesy, coordinatesz;
 
         Vector3d vert;
 
@@ -94,8 +92,8 @@ bool ImportAll(const string &filename, DFN &data)
         getline(file, line);
         convertN.str(line);
         convertN >> id >> tmp >> vertices;
-        data.MaxId = id;
-        data.NumberVertices.push_back(vertices);
+
+        data.N_Vertices.push_back(vertices);
 
         getline(file, line);
 
@@ -105,41 +103,31 @@ bool ImportAll(const string &filename, DFN &data)
 
         for(unsigned int j = 0; j != vertices; j++)
         {
-
             convert1 >> coordx;
             coordinatesx.push_back(coordx);
-
         }
 
         getline(file, line);
         replace(line.begin(),line.end(), ';' ,' ');
         istringstream convert2(line);
 
-
         for(unsigned int j = 0; j != vertices; j++)
         {
-
             convert2 >> coordy;
             coordinatesy.push_back(coordy);
-
         }
 
         getline(file, line);
         replace(line.begin(),line.end(), ';' ,' ');
         istringstream convert3(line);
 
-
-
         for(unsigned int j = 0; j != vertices; j++)
         {
-
             convert3 >> coordz;
             coordinatesz.push_back(coordz);
-
         }
 
         for(unsigned int i = 0; i != vertices;i++)
-
         {
             vert[0] = coordinatesx[i];
             vert[1] = coordinatesy[i];
@@ -147,63 +135,59 @@ bool ImportAll(const string &filename, DFN &data)
 
             Vertices.push_back(vert);
             vert = {};
-
         }
 
+        data.MaxId = id;
         data.Vertices.push_back(Vertices);
-
         getline(file, line);
-
     }
 
     return true;
-
 }
 
-//--------------------------------TEST-DELLA-SFERA-E-DEL-BARICENTRO-------------------------------------------------------------
+//------INIZIALIZZO-BARICENTRI-E-RAGGI----------------------------------------------------------------------------------------
 
-bool Testsfera(DFN &data)
+bool Createspheres(DFN &data)
 {
+
+    vector<unsigned int> num_vertices = data.N_Vertices;
+    vector<vector<Vector3d>> vertices = data.Vertices;
 
     for(unsigned int id = 0; id != (data.MaxId + 1); id++)
     {
         Vector3d bari;
-        unsigned int num = data.NumberVertices[id];
 
-        double tmpx = 0.0;
-        double tmpy = 0.0;
-        double tmpz = 0.0;
+        double tmpx = 0.0, tmpy = 0.0, tmpz = 0.0;
 
-        for(unsigned int i = 0; i != num; i++)
+        double distance = 0.0, maxdistance = 0.0;
+
+        for(unsigned int i = 0; i != num_vertices[id]; i++)
         {
-            Vector3d point = data.Vertices[id][i];
+            Vector3d point = vertices[id][i];
+
             tmpx += point[0];
             tmpy += point[1];
             tmpz += point[2];
-
         }
 
-        bari[0] = tmpx / num;
-        bari[1] = tmpy / num;
-        bari[2] = tmpz / num;
+        bari[0] = tmpx / num_vertices[id];
+        bari[1] = tmpy / num_vertices[id];
+        bari[2] = tmpz / num_vertices[id];
 
-        data.Baricentri.push_back(bari);
+        data.Barycentres.push_back(bari);
 
-        double distance = 0.0;
-        double maxdistance = 0.0;
-
-        for(unsigned int i = 0; i != num; i++)
+        for(unsigned int i = 0; i != num_vertices[id]; i++)
         {
-            Vector3d point = data.Vertices[id][i];
+            Vector3d point = vertices[id][i];
+
             distance = sqrt(pow(bari[0] - point[0],2) + pow(bari[1] - point[1],2) + pow(bari[2] - point[2],2));
             if(distance > maxdistance)
             {
                 maxdistance = distance;
             }
-
         }
 
-        data.raggi.push_back(maxdistance);
+        data.Rays.push_back(maxdistance);
 
     }
 
@@ -253,20 +237,20 @@ bool Testpianiparalleli(DFN &data)
 bool Testintersezione(DFN &data)
 {
     unsigned int NUMEROINTERSEZIONI = 0;
-    vector<unsigned int> Frig_frac(data.NumberFractures);
-    for(unsigned int k = 0; k!= data.NumberFractures;k++)
+    vector<unsigned int> Frig_frac(data.N_Fractures);
+    for(unsigned int k = 0; k!= data.N_Fractures;k++)
         {
         data.IdTraces.push_back({});
         data.BoolTraces.push_back({});
         data.Id_Lenght_Fractures.push_back({});
         }
 
-    for (unsigned int i = 0; i != data.NumberFractures;i++ )
-        for ( unsigned int j = i +1; j != data.NumberFractures; j++)
+    for (unsigned int i = 0; i != data.N_Fractures;i++ )
+        for ( unsigned int j = i +1; j != data.N_Fractures; j++)
         {
 
-            Vector3d bari1 = data.Baricentri[i];
-            Vector3d bari2 = data.Baricentri[j];
+            Vector3d bari1 = data.Barycentres[i];
+            Vector3d bari2 = data.Barycentres[j];
 
             Vector3d normale1;
             Vector3d normale2;
@@ -275,9 +259,9 @@ bool Testintersezione(DFN &data)
             normale2 = data.Normals[j];
 
             double distanza_bari = sqrt(pow(bari1[0]-bari2[0],2) + pow(bari1[1]-bari2[1],2) + pow(bari1[2]-bari2[2],2));
-            double somma_raggi = data.raggi[i] + data.raggi[j];
+            double somma_rays = data.Rays[i] + data.Rays[j];
 
-            if(( distanza_bari - somma_raggi < 1e-10 ) && ( (normale1.cross(normale2)).norm() > 1e-10 ))  // test baricentro e piani paralleli
+            if(( distanza_bari - somma_rays < 1e-10 ) && ( (normale1.cross(normale2)).norm() > 1e-10 ))  // test baricentro e piani paralleli
             {
 
             vector<double> test;
@@ -298,7 +282,7 @@ bool Testintersezione(DFN &data)
 
             Vector3d P1 = P0+director;   //secondo punto sulla retta di intersezione
 
-            unsigned int numVertices = data.NumberVertices[i];
+            unsigned int numVertices = data.N_Vertices[i];
             for(unsigned int w = 0; w < numVertices; w++)
             {
                 const Vector3d punto0 = data.Vertices[i][w];
@@ -340,7 +324,7 @@ bool Testintersezione(DFN &data)
                 }
             }
 
-            numVertices = data.NumberVertices[j];
+            numVertices = data.N_Vertices[j];
             for(unsigned int w = 0; w < numVertices; w++)
             {
                 const Vector3d punto0 = data.Vertices[j][w];
@@ -492,7 +476,7 @@ bool Testintersezione(DFN &data)
 
     data.NumberTraces = NUMEROINTERSEZIONI;
     data.TracesinFigures = Frig_frac;
-    for(unsigned int k = 0; k!= data.NumberFractures;k++)
+    for(unsigned int k = 0; k!= data.N_Fractures;k++)
     {
         sort(data.Id_Lenght_Fractures[k].begin(), data.Id_Lenght_Fractures[k].end(), [](const pair<unsigned int, double>& a, const pair<unsigned int,double>& b)
         {
@@ -521,7 +505,7 @@ bool Stampa(DFN &data)
         out << data.GeneratingPoints[t][1][0] << " , " << data.GeneratingPoints[t][1][1] << " , " << data.GeneratingPoints[t][1][2] << endl;
     }
     out << endl;
-    for(unsigned int id = 0; id != data.NumberFractures; id++)
+    for(unsigned int id = 0; id != data.N_Fractures; id++)
     {
         if(size(data.IdTraces[id]) != 0)
         {

@@ -30,38 +30,38 @@ TEST(IMPORT_TEST, TestImportAll)
                                               {{0.2,0.2,0.1},{0.2,0.4,0.1},{0.2,0.2,-0.1},{0.2,0.4,-0.1}}
                                              };
 
-    EXPECT_EQ(test1.NumberFractures, 4);
+    EXPECT_EQ(test1.N_Fractures, 4);
     EXPECT_EQ(test1.MaxId, 3);
-    EXPECT_EQ(test1.NumberVertices, num_vertices_true);
+    EXPECT_EQ(test1.N_Vertices, num_vertices_true);
     EXPECT_EQ(test1.Vertices, vertices_true);
 
 }
 
 //------------------------------TEST-SFERA-------------------------
 
-TEST(SFERA_TEST, TestTestsfera)
+TEST(SFERA_TEST, TestCreatespheres)
 {
 
     DFN test2;
-    test2.NumberFractures = 4;
+    test2.N_Fractures = 4;
     test2.MaxId = 3;
-    test2.NumberVertices = {4,4,3,5};
+    test2.N_Vertices = {4,4,3,5};
     test2.Vertices = {   {{0,0,0},{1,0,0},{1,1,0},{0,1,0}},
                          {{0,1,2},{0,1,3},{0,2,4},{0,2,1}},
                          {{3.5,2.5,0},{2.5,3.5,0},{0,0,9}},
                          {{0.2,0,0},{0.6,0,0},{0.8,0,3},{0.4,0,5},{0,0,2}}
                       };
 
-    Testsfera(test2);
+    Createspheres(test2);
 
     vector<Vector3d> bari_true = {{0.5,0.5,0},{0,1.5,2.5},{2,2,3},{0.4,0,2}};
-    vector<double> raggi_true = {0.707107,1.581138,6.633249,3};
+    vector<double> rays_true = {0.707107,1.581138,6.633249,3};
 
 
     for(unsigned int i = 0; i != 4; i++)
     {
-    EXPECT_TRUE(test2.Baricentri[i].norm() - bari_true[i].norm() < 1e-6);
-    EXPECT_TRUE(abs(test2.raggi[i]- raggi_true[i]) < 1e-6);
+    EXPECT_TRUE(test2.Barycentres[i].norm() - bari_true[i].norm() < 1e-6);
+    EXPECT_TRUE(abs(test2.Rays[i]- rays_true[i]) < 1e-6);
     }
 
 }
@@ -73,9 +73,9 @@ TEST(PIANI_TEST, TestTestpianiparalleli)
 {
 
     DFN test3;
-    test3.NumberFractures = 4;
+    test3.N_Fractures = 4;
     test3.MaxId = 3;
-    test3.NumberVertices = {4,4,3,3};
+    test3.N_Vertices = {4,4,3,3};
     test3.Vertices = {   {{0,0,0},{1,0,0},{1,1,0},{0,1,0}},
                         {{0,0,2},{1,0,2},{1,1,2},{0,1,2}},
                         {{5,0,0},{5,2,0},{5,1,2}},
@@ -101,7 +101,7 @@ TEST(PIANI_TEST, TestTestpianiparalleli)
 
     DFN test4;
     ImportAll("./Test_data2.txt", test4);
-    Testsfera(test4);
+    Createspheres(test4);
     Testpianiparalleli(test4);
     Testintersezione(test4);
 
@@ -131,14 +131,14 @@ TEST(TEST_FINALE, TestFinalTest){
 
     DFN test6;
     ImportAll("./Test_data2.txt", test6);
-    Testsfera(test6);
+    Createspheres(test6);
     Testpianiparalleli(test6);
     Testintersezione(test6);
     Stampa(test6);
 
     bool final_test_true = false;
 
-    EXPECT_EQ(ImportAll("./Test_data2.txt", test6) && !(Testsfera(test6)) && Testpianiparalleli(test6)
+    EXPECT_EQ(ImportAll("./Test_data2.txt", test6) && !(Createspheres(test6)) && Testpianiparalleli(test6)
                   && Testintersezione(test6) && Stampa(test6), final_test_true);
 
 
