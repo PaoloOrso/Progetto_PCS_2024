@@ -21,7 +21,7 @@ namespace FracturesTraces
 bool FinalTest(DFN& data)
 {
     // 3 10 50 82 200 362
-    if(!ImportAll("./FR200_data.txt", data))
+    if(!ImportAll("./FR200_data2.txt", data))
     {
         return false;
     }

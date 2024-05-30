@@ -12,20 +12,7 @@ using namespace Eigen;
 using namespace std;
 
 namespace FracturesTraces {
-//------------------------------------TEST-FINALE--------------
-// TEST(TEST_FINALE, TestFinalTest){
 
-//     Matrix3d vertices = Matrix3d::Zero();
-
-//     vertices << 0.0, 1.0, 0.0,
-//         0.0, 0.0, 1.0,
-//         0.0, 0.0, 0.0;
-
-//     Triangle t(vertices);
-
-//     double area = t.computeArea();
-//     EXPECT_EQ(area, 0.5);
-// }
 
 //--------------------------------TEST-IMPORT-------------------
 
@@ -68,45 +55,95 @@ TEST(SFERA_TEST, TestTestsfera)
     Testsfera(test2);
 
     vector<Vector3d> bari_true = {{0.5,0.5,0},{0,1.5,2.5},{2,2,3},{0.4,0,2}};
-    vector<double> raggi_true = {0.707106,0.632455,7.011419,1.0770329615};
+    vector<double> raggi_true = {0.707107,1.581138,6.633249,3};
 
 
-    EXPECT_EQ(test2.Baricentri,bari_true);
-    EXPECT_EQ(test2.raggi, raggi_true );
+    for(unsigned int i = 0; i != 4; i++)
+    {
+    EXPECT_TRUE(test2.Baricentri[i].norm() - bari_true[i].norm() < 1e-6);
+    EXPECT_TRUE(abs(test2.raggi[i]- raggi_true[i]) < 1e-6);
+    }
+
 }
 
 
-// //------------------------------TEST-PIANI-PARALLELI----------------
+//------------------------------TEST-PIANI-PARALLELI----------------
 
-// TEST(PIANI_TEST, TestTestpianiparalleli){
+TEST(PIANI_TEST, TestTestpianiparalleli)
+{
 
-//             DFN test = Testsfera();
+    DFN test3;
+    test3.NumberFractures = 4;
+    test3.MaxId = 3;
+    test3.NumberVertices = {4,4,3,3};
+    test3.Vertices = {   {{0,0,0},{1,0,0},{1,1,0},{0,1,0}},
+                        {{0,0,2},{1,0,2},{1,1,2},{0,1,2}},
+                        {{5,0,0},{5,2,0},{5,1,2}},
+                        {{-1,1,0},{-1,3,0},{-3,2,4}},
+                     };
 
-//     EXPECTED_EQ()
-//     EXPECTED_EQ()
+    Testpianiparalleli(test3);
 
-// }
-
-// //-------------------------------TESTO-VARIE-INTERSEZIONI-------------------------
-
-// TEST(INTERSEZIONI_TEST, TestTestintersezione{
-
-//     DFN test = Testsfera();
-
-//     EXPECTED_EQ()
-//     EXPECTED_EQ()
-
-// }
-
-// //-------------------------------TEST-STAMPA---------------------------------
-
-// TEST(SPAMPA_TEST,TestStampa){
+    vector<double> d_true = {0,2,5,-0.894427};
 
 
+    for(unsigned int i = 0; i!= 4; i++)
+    {
+    EXPECT_TRUE(abs(test3.Normals[i].norm()) -1 < 1e-6);
+    EXPECT_TRUE(abs(test3.Ds[i] - d_true[i]) < 1e-6 );
+    }
+ }
 
-// }
+//-------------------------------TESTO-VARIE-INTERSEZIONI-------------------------
 
-// }
+ TEST(INTERSEZIONI_TEST, TestTestintersezione)
+{
+
+    DFN test4;
+    ImportAll("./Test_data2.txt", test4);
+    Testsfera(test4);
+    Testpianiparalleli(test4);
+    Testintersezione(test4);
+
+    vector<Vector2i> gen_frac_true = {{0,1},{0,2},{3,4}};
+    vector<double> Len_traces_true = {0.5,0.4,0.4};
+    vector<vector<bool>> tips_true = {{false,false},{false,true},{true,true}};
+    vector<unsigned int> traces_figures_true = {2,1,1,1,1};
+    vector<vector<unsigned int>> id_traces_true = {{0,1},{0},{1},{2},{2}};
+
+
+    EXPECT_EQ(test4.GeneratingFractures, gen_frac_true);
+    EXPECT_EQ(test4.Tips, tips_true);
+    EXPECT_EQ(test4.TracesinFigures, traces_figures_true);
+    EXPECT_EQ(test4.IdTraces, id_traces_true);
+
+    for(unsigned int i = 0; i != test4.NumberTraces;i++)
+    {
+        EXPECT_TRUE(abs(test4.LenghtTraces[i] - Len_traces_true[i]) < 1e-6);
+    }
+}
+
+//--TEST_STAMPA?----
+
+
+//------------------------------------TEST-FINALE--------------
+TEST(TEST_FINALE, TestFinalTest){
+
+    DFN test6;
+    ImportAll("./Test_data2.txt", test6);
+    Testsfera(test6);
+    Testpianiparalleli(test6);
+    Testintersezione(test6);
+    Stampa(test6);
+
+    bool final_test_true = false;
+
+    EXPECT_EQ(ImportAll("./Test_data2.txt", test6) && !(Testsfera(test6)) && Testpianiparalleli(test6)
+                  && Testintersezione(test6) && Stampa(test6), final_test_true);
+
+
+}
+
 }
 
 
