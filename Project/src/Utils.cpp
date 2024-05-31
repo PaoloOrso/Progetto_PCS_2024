@@ -21,7 +21,7 @@ namespace FracturesTraces
 bool FinalTest(DFN& data)
 {
     // 3 10 50 82 200 362
-    if(!ImportAll("./FR3_data.txt", data))
+    if(!ImportAll("./FR10_data.txt", data))
     {
         return false;
     }
@@ -46,10 +46,15 @@ bool FinalTest(DFN& data)
         return false;
     }
 
+    if(!SubPolygons(data))
+    {
+        return false;
+    }
+
     return true;
 }
 
-//------INIZIALIZZO-N.FRATTURE--MAX.ID--VETTORE-DI-N.VERTICI--VETTORE-DEI-VERTICI-------------------
+//-------INIZIALIZZO-N.FRATTURE--MAX.ID--VETTORE-DI-N.VERTICI--VETTORE-DEI-VERTICI------------------
 
 bool ImportAll(const string &filename, DFN &data)
 {
@@ -145,7 +150,7 @@ bool ImportAll(const string &filename, DFN &data)
     return true;
 }
 
-//------INIZIALIZZO-BARICENTRI-E-RAGGI--------------------------------------------------------------
+//-------INIZIALIZZO-BARICENTRI-E-RAGGI-------------------------------------------------------------
 
 bool CreateSpheres(DFN &data)
 {
@@ -191,7 +196,7 @@ bool CreateSpheres(DFN &data)
 
 }
 
-//------INIZIALIZZO-COEFFICIENTI-DEI-PIANI-E-VERSORI-NORMALI----------------------------------------
+//-------INIZIALIZZO-COEFFICIENTI-DEI-PIANI-E-VERSORI-NORMALI---------------------------------------
 
 bool CreateNormals(DFN &data)
 {   
@@ -487,6 +492,8 @@ bool PrintResults(DFN &data)
     out << endl;
     for(unsigned int id = 0; id != data.N_Fractures; id++)
     {
+        vector<unsigned int> Sorted_ids;
+
         if(size(data.IdTraces[id]) != 0)
         {
         out << "# FractureId; NumTraces" << endl << id << " ; " << data.TracesinFigures[id] << endl;
@@ -495,7 +502,8 @@ bool PrintResults(DFN &data)
         {
             if(data.BoolTraces[id][l] == true)
             {
-            out << (data.Id_Lenght_Fractures[id][l]).first << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << (data.Id_Lenght_Fractures[id][l]).second << endl;
+                out << (data.Id_Lenght_Fractures[id][l]).first << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << (data.Id_Lenght_Fractures[id][l]).second << endl;
+                Sorted_ids.push_back(data.Id_Lenght_Fractures[id][l].first);
             }
         }
 
@@ -504,14 +512,91 @@ bool PrintResults(DFN &data)
             if(data.BoolTraces[id][l] == false)
             {
                 out << (data.Id_Lenght_Fractures[id][l]).first << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << (data.Id_Lenght_Fractures[id][l]).second << endl;
+                Sorted_ids.push_back(data.Id_Lenght_Fractures[id][l].first);
             }
         }
         out << endl;
         }
+
+        data.Id_Traces_Sorted.push_back(Sorted_ids);
     }
     out.close();
 
     return true;
+}
+
+//-------CREO-SOTTOPOLIGONI-------------------------------------------------------------------------
+
+bool SubPolygons(DFN &data)
+{
+    vector<Vector3d> Polygon;
+    unsigned int N_traces;
+    vector<unsigned int> Id_traces_sorted;
+    vector<Vector3d> Trace_points;
+    Vector3d ver0, ver1;
+    Vector3d dif1, dif2, dif3;
+    Vector2d coeffs;
+
+    for(unsigned int i = 0; i != data.N_Fractures; i++)
+    {
+        Polygon = data.Vertices[i];
+
+        N_traces = data.TracesinFigures[i];
+
+        Id_traces_sorted = data.Id_Traces_Sorted[i];
+
+        for(unsigned int j = 0; j != N_traces ; j++)  // qui inizio con i tagli
+        {
+            Trace_points = data.GeneratingPoints[Id_traces_sorted[j]];  // punti generatori della traccia
+
+            for(unsigned int w = 0; w < data.N_Vertices[i]; w++)
+            {
+                vector<double> prova;
+
+                //se la frattura è passante, i punti generatori sono i nuovi vertici, else:
+                // devo capire se un punto appartiene a quale sottopoligono e partire da lì
+
+                ver0 = data.Vertices[i][w];
+                ver1 = data.Vertices[i][ (w + 1) % data.N_Vertices[i] ];
+
+                dif1 = Trace_points[1]-Trace_points[0];
+                dif2 = ver1-ver0;
+                dif3 = ver0-Trace_points[0];
+
+                dett = dif1.cross(dif2);
+
+                if(dett.norm() > data.Tol)
+                {
+                    Matrix<double,3,2> E;
+
+                    E << dif1[0], dif2[0],
+                         dif1[1], dif2[1],
+                         dif1[2], dif2[2];
+
+
+                    Vector3d f;
+
+                    f(0) = dif3[0]; f(1) = dif3[1]; f(2) = dif3[2];
+
+                    coeffs = E.colPivHouseholderQr().solve(f);  // trovo coeffs punto int traccia-lati
+
+                    coef0 = coeffs(0);
+                    coef1 = coeffs(1);
+
+                    if(-coef1 > 0.0 && -coeff < 1.0)
+                    {
+                        prova.push_back(coef0);
+                    }
+
+            }
+
+
+        }
+
+    }
+
+    return true;
+
 }
 
 }

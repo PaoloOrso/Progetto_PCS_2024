@@ -21,5 +21,6 @@ bool FindIntersections(DFN &data);
 
 bool PrintResults(DFN &data);
 
+bool SubPolygons(DFN &data);
 
 }
