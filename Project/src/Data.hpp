@@ -9,6 +9,8 @@ namespace FracturesTraces{
 
 struct DFN
 {
+    double Tol = 1e-10;
+
     unsigned int N_Fractures;
     unsigned int MaxId;
     vector<unsigned int> N_Vertices;

@@ -39,7 +39,7 @@ TEST(IMPORT_TEST, TestImportAll)
 
 //------------------------------TEST-SFERA-------------------------
 
-TEST(SFERA_TEST, TestCreatespheres)
+TEST(SFERA_TEST, TestCreateSpheres)
 {
 
     DFN test2;
@@ -52,7 +52,7 @@ TEST(SFERA_TEST, TestCreatespheres)
                          {{0.2,0,0},{0.6,0,0},{0.8,0,3},{0.4,0,5},{0,0,2}}
                       };
 
-    Createspheres(test2);
+    CreateSpheres(test2);
 
     vector<Vector3d> bari_true = {{0.5,0.5,0},{0,1.5,2.5},{2,2,3},{0.4,0,2}};
     vector<double> rays_true = {0.707107,1.581138,6.633249,3};
@@ -69,7 +69,7 @@ TEST(SFERA_TEST, TestCreatespheres)
 
 //------------------------------TEST-PIANI-PARALLELI----------------
 
-TEST(PIANI_TEST, TestTestpianiparalleli)
+TEST(PIANI_TEST, TestCreateNormals)
 {
 
     DFN test3;
@@ -82,7 +82,7 @@ TEST(PIANI_TEST, TestTestpianiparalleli)
                         {{-1,1,0},{-1,3,0},{-3,2,4}},
                      };
 
-    Testpianiparalleli(test3);
+    CreateNormals(test3);
 
     vector<double> d_true = {0,2,5,-0.894427};
 
@@ -101,9 +101,9 @@ TEST(PIANI_TEST, TestTestpianiparalleli)
 
     DFN test4;
     ImportAll("./Test_data2.txt", test4);
-    Createspheres(test4);
-    Testpianiparalleli(test4);
-    Testintersezione(test4);
+    CreateSpheres(test4);
+    CreateNormals(test4);
+    FindIntersections(test4);
 
     vector<Vector2i> gen_frac_true = {{0,1},{0,2},{3,4}};
     vector<double> Len_traces_true = {0.5,0.4,0.4};
@@ -131,15 +131,15 @@ TEST(TEST_FINALE, TestFinalTest){
 
     DFN test6;
     ImportAll("./Test_data2.txt", test6);
-    Createspheres(test6);
-    Testpianiparalleli(test6);
-    Testintersezione(test6);
-    Stampa(test6);
+    CreateSpheres(test6);
+    CreateNormals(test6);
+    FindIntersections(test6);
+    PrintResults(test6);
 
     bool final_test_true = false;
 
-    EXPECT_EQ(ImportAll("./Test_data2.txt", test6) && !(Createspheres(test6)) && Testpianiparalleli(test6)
-                  && Testintersezione(test6) && Stampa(test6), final_test_true);
+    EXPECT_EQ(ImportAll("./Test_data2.txt", test6) && !(CreateSpheres(test6)) && CreateNormals(test6)
+                  && FindIntersections(test6) && PrintResults(test6), final_test_true);
 
 
 }

@@ -13,13 +13,13 @@ bool FinalTest(DFN& data);
 
 bool ImportAll(const string &filename, DFN& data);
 
-bool Createspheres(DFN &data);
+bool CreateSpheres(DFN &data);
 
-bool Testpianiparalleli(DFN &data);
+bool CreateNormals(DFN &data);
 
-bool Testintersezione(DFN &data);
+bool FindIntersections(DFN &data);
 
-bool Stampa(DFN &data);
+bool PrintResults(DFN &data);
 
 
 }
