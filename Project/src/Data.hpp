@@ -30,8 +30,7 @@ struct DFN
     vector<unsigned int> TracesinFigures;
     vector<vector<unsigned int>> IdTraces;
     vector<vector<bool>> BoolTraces;
-    vector<vector<pair<unsigned int,double>>> Id_Lenght_Fractures;
-
+    vector<vector<tuple<unsigned int,double,bool>>> Id_Lenght_Fractures_Tips;
     vector<vector<unsigned int>> Id_Traces_Sorted;
 
 
