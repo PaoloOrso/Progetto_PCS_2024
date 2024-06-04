@@ -199,11 +199,11 @@ bool CreateSpheres(DFN &data)
 //-------INIZIALIZZO-COEFFICIENTI-DEI-PIANI-E-VERSORI-NORMALI---------------------------------------
 
 bool CreateNormals(DFN &data)
-{   
+{
     Vector3d point0, point1, point2;
 
     Vector3d vector1, vector2;
-    
+
     for(unsigned int id = 0; id != (data.MaxId + 1); id++)
     {
         Vector3d normal;
@@ -238,7 +238,7 @@ bool FindIntersections(DFN &data)
     {
         data.IdTraces.push_back({});
         data.BoolTraces.push_back({});
-        data.Id_Lenght_Fractures_Tips.push_back({});
+        data.Id_Lenght_Fractures.push_back({});
     }
 
     unsigned int N_Intersections = 0;
@@ -300,8 +300,8 @@ bool FindIntersections(DFN &data)
                 Matrix3d A;
 
                 A << normal1[0], normal1[1], normal1[2],
-                     normal2[0], normal2[1], normal2[2],
-                     director[0], director[1], director[2];
+                    normal2[0], normal2[1], normal2[2],
+                    director[0], director[1], director[2];
 
                 Vector3d b;
 
@@ -327,8 +327,8 @@ bool FindIntersections(DFN &data)
                         Matrix<double,3,2> AA;
 
                         AA << diff1[0], diff2[0],
-                              diff1[1], diff2[1],
-                              diff1[2], diff2[2];
+                            diff1[1], diff2[1],
+                            diff1[2], diff2[2];
 
 
                         Vector3d bb;
@@ -363,8 +363,8 @@ bool FindIntersections(DFN &data)
                         Matrix<double,3,2> AA;
 
                         AA << diff1[0], diff2[0],
-                              diff1[1], diff2[1],
-                              diff1[2], diff2[2];
+                            diff1[1], diff2[1],
+                            diff1[2], diff2[2];
 
 
                         Vector3d bb;
@@ -400,8 +400,7 @@ bool FindIntersections(DFN &data)
 
                     gen_points = {trace_end1,trace_end2};
 
-                    tuple<unsigned int, double, bool> Id_trace_lenght_tips_false (N_Intersections,trace_lenght,false);
-                    tuple<unsigned int, double, bool> Id_trace_lenght_tips_true (N_Intersections,trace_lenght,true);
+                    pair<unsigned int, double> Id_trace_lenght(N_Intersections,trace_lenght);
 
                     cond1 = abs(alfa_vector[0] - alfa_vector[2]) < data.Tol && abs(alfa_vector[1] - alfa_vector[3]) < data.Tol;
 
@@ -415,45 +414,37 @@ bool FindIntersections(DFN &data)
                             (alfa_vector[1] >= min(alfa_vector[2],alfa_vector[3]) && alfa_vector[1] <= max(alfa_vector[2],alfa_vector[3]));
 
                     if (cond1 || cond2 || cond3)
-                    {                       
+                    {
                         data.GeneratingFractures.push_back(gen_frac);
                         data.GeneratingPoints.push_back(gen_points);
                         data.LenghtTraces.push_back(trace_lenght);
+
+                        data.Id_Lenght_Fractures[i].push_back(Id_trace_lenght);
+                        data.Id_Lenght_Fractures[j].push_back(Id_trace_lenght);
 
                         N_traces_fractures[i]++;
                         N_traces_fractures[j]++;
 
                         data.IdTraces[i].push_back(N_Intersections);
                         data.IdTraces[j].push_back(N_Intersections);
-
                         N_Intersections++;
 
                         if(cond1)
-                        {                         
-                            data.Id_Lenght_Fractures_Tips[i].push_back(Id_trace_lenght_tips_true);
-                            data.Id_Lenght_Fractures_Tips[j].push_back(Id_trace_lenght_tips_true);
-
+                        {
                             data.Tips.push_back({true,true});
                             data.BoolTraces[i].push_back(true);
                             data.BoolTraces[j].push_back(true);
-
                         }
                         else if(cond2)
                         {
                             if(cond4)
                             {
-                                data.Id_Lenght_Fractures_Tips[i].push_back(Id_trace_lenght_tips_true);
-                                data.Id_Lenght_Fractures_Tips[j].push_back(Id_trace_lenght_tips_false);
-
                                 data.Tips.push_back({true,false});
                                 data.BoolTraces[i].push_back(true);
                                 data.BoolTraces[j].push_back(false);
                             }
                             else
                             {
-                                data.Id_Lenght_Fractures_Tips[i].push_back(Id_trace_lenght_tips_false);
-                                data.Id_Lenght_Fractures_Tips[j].push_back(Id_trace_lenght_tips_true);
-
                                 data.Tips.push_back({false,true});
                                 data.BoolTraces[i].push_back(false);
                                 data.BoolTraces[j].push_back(true);
@@ -461,9 +452,6 @@ bool FindIntersections(DFN &data)
                         }
                         else if(cond3)
                         {
-                            data.Id_Lenght_Fractures_Tips[i].push_back(Id_trace_lenght_tips_false);
-                            data.Id_Lenght_Fractures_Tips[j].push_back(Id_trace_lenght_tips_false);
-
                             data.Tips.push_back({false,false});
                             data.BoolTraces[i].push_back(false);
                             data.BoolTraces[j].push_back(false);
@@ -478,10 +466,10 @@ bool FindIntersections(DFN &data)
 
     for(unsigned int k = 0; k!= data.N_Fractures;k++)
     {
-        sort(data.Id_Lenght_Fractures_Tips[k].begin(), data.Id_Lenght_Fractures_Tips[k].end(), [](const tuple<unsigned int, double,bool>& a, const tuple<unsigned int,double,bool>& b)
-        {
-            return get<1>(a) > get<1>(b);
-        });
+        sort(data.Id_Lenght_Fractures[k].begin(), data.Id_Lenght_Fractures[k].end(), [](const pair<unsigned int, double>& a, const pair<unsigned int,double>& b)
+             {
+                 return a.second > b.second;
+             });
     }
 
     return true;
@@ -508,26 +496,26 @@ bool PrintResults(DFN &data)
 
         if(size(data.IdTraces[id]) != 0)
         {
-        out << "# FractureId; NumTraces" << endl << id << " ; " << data.TracesinFigures[id] << endl;
-        out << "# TraceId; Tips; Lenght" << endl;
-        for(unsigned int l = 0; l != size(data.Id_Lenght_Fractures_Tips[id]); l++)
-        {
-            if(data.BoolTraces[id][l] == true)
+            out << "# FractureId; NumTraces" << endl << id << " ; " << data.TracesinFigures[id] << endl;
+            out << "# TraceId; Tips; Lenght" << endl;
+            for(unsigned int l = 0; l != size(data.Id_Lenght_Fractures[id]); l++)
             {
-                out << get<0>(data.Id_Lenght_Fractures_Tips[id][l]) << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << get<1>(data.Id_Lenght_Fractures_Tips[id][l]) << endl;
-                Sorted_ids.push_back(get<1>(data.Id_Lenght_Fractures_Tips[id][l]));
+                if(data.BoolTraces[id][l] == true)
+                {
+                    out << (data.Id_Lenght_Fractures[id][l]).first << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << (data.Id_Lenght_Fractures[id][l]).second << endl;
+                    Sorted_ids.push_back(data.Id_Lenght_Fractures[id][l].first);
+                }
             }
-        }
 
-        for(unsigned int l = 0; l != size(data.Id_Lenght_Fractures_Tips[id]); l++)
-        {
-            if(data.BoolTraces[id][l] == false)
+            for(unsigned int l = 0; l != size(data.Id_Lenght_Fractures[id]); l++)
             {
-                out << get<0>(data.Id_Lenght_Fractures_Tips[id][l]) << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << get<1>(data.Id_Lenght_Fractures_Tips[id][l]) << endl;
-                Sorted_ids.push_back(get<1>(data.Id_Lenght_Fractures_Tips[id][l]));
+                if(data.BoolTraces[id][l] == false)
+                {
+                    out << (data.Id_Lenght_Fractures[id][l]).first << " ; " << boolalpha << data.BoolTraces[id][l] << noboolalpha << " ; " << (data.Id_Lenght_Fractures[id][l]).second << endl;
+                    Sorted_ids.push_back(data.Id_Lenght_Fractures[id][l].first);
+                }
             }
-        }
-        out << endl;
+            out << endl;
         }
 
         data.Id_Traces_Sorted.push_back(Sorted_ids);
@@ -541,93 +529,74 @@ bool PrintResults(DFN &data)
 
 bool SubPolygons(DFN &data)
 {
-    vector<Vector3d> Polygon;
-    vector<vector<Vector3d> Polygroup;
-    unsigned int N_traces;
-    vector<unsigned int> Id_traces_sorted;
-    vector<Vector3d> Trace_points;
-    Vector3d ver0, ver1;
-    Vector3d dif1, dif2, dif3;
-    Vector2d coeffs;
-    Vector3d dett;
-    Vector3d new_vert0, new_vert1;
-    double coef0, coef1;
+    // vector<Vector3d> Polygon;
+    // unsigned int N_traces;
+    // vector<unsigned int> Id_traces_sorted;
+    // vector<Vector3d> Trace_points;
+    // Vector3d ver0, ver1;
+    // Vector3d dif1, dif2, dif3;
+    // Vector2d coeffs;
+
+    // for(unsigned int i = 0; i != data.N_Fractures; i++)
+    // {
+    //     Polygon = data.Vertices[i];
+
+    //     N_traces = data.TracesinFigures[i];
+
+    //     Id_traces_sorted = data.Id_Traces_Sorted[i];
+
+    //     for(unsigned int j = 0; j != N_traces ; j++)  // qui inizio con i tagli
+    //     {
+    //         Trace_points = data.GeneratingPoints[Id_traces_sorted[j]];  // punti generatori della traccia
+
+    //         for(unsigned int w = 0; w < data.N_Vertices[i]; w++)
+    //         {
+    //             vector<double> prova;
+
+    //             //se la frattura è passante, i punti generatori sono i nuovi vertici, else:
+    //             // devo capire se un punto appartiene a quale sottopoligono e partire da lì
+
+    //             ver0 = data.Vertices[i][w];
+    //             ver1 = data.Vertices[i][ (w + 1) % data.N_Vertices[i] ];
+
+    //             dif1 = Trace_points[1]-Trace_points[0];
+    //             dif2 = ver1-ver0;
+    //             dif3 = ver0-Trace_points[0];
+
+    //             dett = dif1.cross(dif2);
+
+    //             if(dett.norm() > data.Tol)
+    //             {
+    //                 Matrix<double,3,2> E;
+
+    //                 E << dif1[0], dif2[0],
+    //                     dif1[1], dif2[1],
+    //                     dif1[2], dif2[2];
 
 
-    for(unsigned int i = 0; i != data.N_Fractures; i++)
-    {
-        Polygon = data.Vertices[i];
+    //                 Vector3d f;
 
-        N_traces = data.TracesinFigures[i];
+    //                 f(0) = dif3[0]; f(1) = dif3[1]; f(2) = dif3[2];
 
-        Id_traces_sorted = data.Id_Traces_Sorted[i];
+    //                 coeffs = E.colPivHouseholderQr().solve(f);  // trovo coeffs punto int traccia-lati
 
-        for(unsigned int j = 0; j != N_traces ; j++)  // qui inizio con i tagli
-        {
-            Trace_points = data.GeneratingPoints[Id_traces_sorted[j]];  // punti generatori della traccia
+    //                 coef0 = coeffs(0);
+    //                 coef1 = coeffs(1);
 
-            for(unsigned int w = 0; w < data.N_Vertices[i]; w++)
-            {
-                vector<double> prova;
+    //                 if(-coef1 > 0.0 && -coeff < 1.0)
+    //                 {
+    //                     prova.push_back(coef0);
+    //                 }
 
-                //se la frattura è passante, i punti generatori sono i nuovi vertici
-
-                if(get<2>data.Id_Lenght_Fractures_Tips[i][j] == true)
-                {
-                    new_vert0 = data.GeneratingPoints[Id_traces_sorted][0];
-                    new_vert1 = data.GeneratingPoints[Id_traces_sorted][1];
-
-                    // devo capire che lati le tracce dividono
+    //             }
 
 
+    //         }
 
+    //     }
 
-
-                }
-
-                ver0 = data.Vertices[i][w];
-                ver1 = data.Vertices[i][ (w + 1) % data.N_Vertices[i] ];
-
-                dif1 = Trace_points[1]-Trace_points[0];
-                dif2 = ver1-ver0;
-                dif3 = ver0-Trace_points[0];
-
-                dett = dif1.cross(dif2);
-
-                if(dett.norm() > data.Tol)
-                {
-                    Matrix<double,3,2> E;
-
-                    E << dif1[0], dif2[0],
-                         dif1[1], dif2[1],
-                         dif1[2], dif2[2];
-
-
-                    Vector3d f;
-
-                    f(0) = dif3[0]; f(1) = dif3[1]; f(2) = dif3[2];
-
-                    coeffs = E.colPivHouseholderQr().solve(f);  // trovo coeffs punto int traccia-lati
-
-                    coef0 = coeffs(0);
-                    coef1 = coeffs(1);
-
-                    if(-coef1 > 0.0 && -coef1 < 1.0)
-                    {
-                        prova.push_back(coef0);
-                    }
-
-                }
-
-
-            }
-
-        }
+        return true;
 
     }
-
-    return true;
-
-}
 
 }
