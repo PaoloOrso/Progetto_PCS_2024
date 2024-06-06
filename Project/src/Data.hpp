@@ -33,6 +33,7 @@ struct DFN
     vector<vector<pair<unsigned int,double>>> Id_Lenght_Fractures;
 
     vector<vector<unsigned int>> Id_Traces_Sorted;
+    vector<vector<bool>> BoolTraces_Sorted;
 
 
 

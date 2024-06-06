@@ -21,7 +21,7 @@ namespace FracturesTraces
 bool FinalTest(DFN& data)
 {
     // 3 10 50 82 200 362
-    if(!ImportAll("./FR10_data.txt", data))
+    if(!ImportAll("./FR3_data.txt", data))
     {
         return false;
     }
@@ -529,74 +529,121 @@ bool PrintResults(DFN &data)
 
 bool SubPolygons(DFN &data)
 {
-    // vector<Vector3d> Polygon;
-    // unsigned int N_traces;
-    // vector<unsigned int> Id_traces_sorted;
-    // vector<Vector3d> Trace_points;
-    // Vector3d ver0, ver1;
-    // Vector3d dif1, dif2, dif3;
-    // Vector2d coeffs;
+    data.BoolTraces_Sorted = data.BoolTraces;
 
-    // for(unsigned int i = 0; i != data.N_Fractures; i++)
-    // {
-    //     Polygon = data.Vertices[i];
+    for(unsigned int g = 0; g != size(data.BoolTraces_Sorted); g++)
+    {
+        partition(data.BoolTraces_Sorted[g].begin(), data.BoolTraces_Sorted[g].end(), [](bool b) { return b; });
+    }
 
-    //     N_traces = data.TracesinFigures[i];
+    unsigned int number_points, number_segments, number_polygons, id_trace;
+    vector<vector<unsigned int>> id_points, id_segments, id_polygons;
+    vector<Vector3d> id_points_coordinates;
+    vector<Vector2i> id_points_extremes;
+    Vector3d vert0, vert1, trace0, trace1;
+    Vector3d diff1, diff2, diff3;
+    Vector3d det;
+    Vector2d coeff;
+    double coef0, coef1;
+    Vector3d new_point;
+    vector<unsigned int> id_new_points;
+    vector<vector<Vector3d>> Subpolygonas;
+    vector<unsigned int> ids_segments_to_erase;
+    vector<unsigned int> old_verts;
 
-    //     Id_traces_sorted = data.Id_Traces_Sorted[i];
+    for(unsigned int i=0; i!= data.N_Fractures; i++)
+    {                                                                               // ciclo su subpolygons
+        id_points_coordinates = data.Vertices[i];
 
-    //     for(unsigned int j = 0; j != N_traces ; j++)  // qui inizio con i tagli
-    //     {
-    //         Trace_points = data.GeneratingPoints[Id_traces_sorted[j]];  // punti generatori della traccia
+        for(unsigned int t=0; t != size(id_points_coordinates); t++)
+        {
+            id_points_extremes.push_back({t,(t+1) % size(id_points_coordinates)});
+        }
 
-    //         for(unsigned int w = 0; w < data.N_Vertices[i]; w++)
-    //         {
-    //             vector<double> prova;
+        number_points = size(id_points_coordinates);
+        number_segments = size(id_points_coordinates);
+        number_polygons = 1;
 
-    //             //se la frattura è passante, i punti generatori sono i nuovi vertici, else:
-    //             // devo capire se un punto appartiene a quale sottopoligono e partire da lì
-
-    //             ver0 = data.Vertices[i][w];
-    //             ver1 = data.Vertices[i][ (w + 1) % data.N_Vertices[i] ];
-
-    //             dif1 = Trace_points[1]-Trace_points[0];
-    //             dif2 = ver1-ver0;
-    //             dif3 = ver0-Trace_points[0];
-
-    //             dett = dif1.cross(dif2);
-
-    //             if(dett.norm() > data.Tol)
-    //             {
-    //                 Matrix<double,3,2> E;
-
-    //                 E << dif1[0], dif2[0],
-    //                     dif1[1], dif2[1],
-    //                     dif1[2], dif2[2];
+        for(unsigned int j=0; j!= data.TracesinFigures[i]; j++)
+        {
+            id_trace = data.Id_Traces_Sorted[i][j];
+            trace0 = data.GeneratingPoints[id_trace][0];
+            trace1 = data.GeneratingPoints[id_trace][1];
 
 
-    //                 Vector3d f;
+            if(data.BoolTraces_Sorted[i][j] == true)
+            {
+                for(unsigned int v = 0; v!= number_segments; v++)
+                {
+                    vert0 = id_points_coordinates[id_points_extremes[v][0]];
+                    vert1 = id_points_coordinates[id_points_extremes[v][1]];
 
-    //                 f(0) = dif3[0]; f(1) = dif3[1]; f(2) = dif3[2];
+                    diff1 = trace1-trace0;
+                    diff2 = vert1-vert0;
+                    diff3 = vert0-trace0;
 
-    //                 coeffs = E.colPivHouseholderQr().solve(f);  // trovo coeffs punto int traccia-lati
+                    det = diff1.cross(diff2);
 
-    //                 coef0 = coeffs(0);
-    //                 coef1 = coeffs(1);
+                    if(det.norm() > data.Tol)
+                    {
+                        Matrix<double,3,2> AA;
 
-    //                 if(-coef1 > 0.0 && -coeff < 1.0)
-    //                 {
-    //                     prova.push_back(coef0);
-    //                 }
-
-    //             }
+                        AA << diff1[0], diff2[0],
+                              diff1[1], diff2[1],
+                              diff1[2], diff2[2];
 
 
-    //         }
+                        Vector3d bb;
 
-    //     }
+                        bb(0) = diff3[0]; bb(1) = diff3[1]; bb(2) = diff3[2];
 
-        return true;
+                        coeff = AA.colPivHouseholderQr().solve(bb);
+
+                        coef0 = coeff(0);
+                        coef1 = coeff(1);
+
+                        if(-coef1 > 0.0 && -coef1 < 1.0)
+                        {
+                            new_point = (trace0 + coef0*(trace1-trace0));
+                            ids_segments_to_erase.push_back(v);
+                            id_points_coordinates.push_back(new_point);
+                            id_new_points.push_back(size(id_points_coordinates) - 1);
+
+                            old_verts.push_back(id_points_extremes[v][0]);
+                            old_verts.push_back(id_points_extremes[v][1]);
+
+                            id_points_extremes.push_back({old_verts[0], size(id_points_coordinates) - 1});
+                            id_points_extremes.push_back({size(id_points_coordinates) - 1, old_verts[1]});
+
+                            old_verts = {};
+
+
+                        }
+
+                    }
+                }
+
+                for(int g = size(ids_segments_to_erase) - 1; g != -1; g--)
+                {
+                    id_points_extremes.erase(id_points_extremes.begin() + ids_segments_to_erase[g]);
+                }
+
+                id_points_extremes.push_back({id_new_points[0],id_new_points[1]});
+
+            }
+            else if (data.BoolTraces_Sorted[i][j] == false)
+            {
+
+            }
+        }
+        ids_segments_to_erase = {};
+        id_points_extremes = {};
+        id_new_points = {};
 
     }
+
+    return true;
+
+}
 
 }
