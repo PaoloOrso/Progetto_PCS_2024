@@ -536,8 +536,7 @@ bool SubPolygons(DFN &data)
         partition(data.BoolTraces_Sorted[g].begin(), data.BoolTraces_Sorted[g].end(), [](bool b) { return b; });
     }
 
-    unsigned int number_points, number_segments, number_polygons, id_trace;
-    vector<vector<unsigned int>> id_points, id_segments, id_polygons;
+    unsigned int id_trace;
     vector<Vector3d> id_points_coordinates;
     vector<Vector2i> id_points_extremes;
     Vector3d vert0, vert1, trace0, trace1;
@@ -546,23 +545,28 @@ bool SubPolygons(DFN &data)
     Vector2d coeff;
     double coef0, coef1;
     Vector3d new_point;
+    bool condition;
+    bool control = false;
     vector<unsigned int> id_new_points;
-    vector<vector<Vector3d>> Subpolygonas;
-    vector<unsigned int> ids_segments_to_erase;
+    vector<unsigned int> ids_new_segment;
+    unsigned int id_new_seg;
+    vector<vector<Vector3d>> Subpolygons;
+    vector<vector<Vector3d>> Subpolygons_new;
     vector<unsigned int> old_verts;
+    Vector2i Sep_poly;
+    Vector3d N,D,P;
+    vector<Vector3d> Polygon1;
+    vector<Vector3d> Polygon2;
 
     for(unsigned int i=0; i!= data.N_Fractures; i++)
     {                                                                               // ciclo su subpolygons
         id_points_coordinates = data.Vertices[i];
+        Subpolygons.push_back(data.Vertices[i]);
 
         for(unsigned int t=0; t != size(id_points_coordinates); t++)
         {
             id_points_extremes.push_back({t,(t+1) % size(id_points_coordinates)});
         }
-
-        number_points = size(id_points_coordinates);
-        number_segments = size(id_points_coordinates);
-        number_polygons = 1;
 
         for(unsigned int j=0; j!= data.TracesinFigures[i]; j++)
         {
@@ -570,73 +574,139 @@ bool SubPolygons(DFN &data)
             trace0 = data.GeneratingPoints[id_trace][0];
             trace1 = data.GeneratingPoints[id_trace][1];
 
-
-            if(data.BoolTraces_Sorted[i][j] == true)
+            for(unsigned int p = 0; p!=size(Subpolygons) ; p++ )
             {
-                for(unsigned int v = 0; v!= number_segments; v++)
+                if(data.BoolTraces_Sorted[i][j] == true)
                 {
-                    vert0 = id_points_coordinates[id_points_extremes[v][0]];
-                    vert1 = id_points_coordinates[id_points_extremes[v][1]];
-
-                    diff1 = trace1-trace0;
-                    diff2 = vert1-vert0;
-                    diff3 = vert0-trace0;
-
-                    det = diff1.cross(diff2);
-
-                    if(det.norm() > data.Tol)
+                    for(unsigned int v = 0; v!= size(Subpolygons[p]); v++)
                     {
-                        Matrix<double,3,2> AA;
+                        vert0 = Subpolygons[p][id_points_extremes[v][0]];
+                        vert1 = Subpolygons[p][id_points_extremes[v][1]];
 
-                        AA << diff1[0], diff2[0],
-                              diff1[1], diff2[1],
-                              diff1[2], diff2[2];
+                        diff1 = trace1-trace0;
+                        diff2 = vert1-vert0;
+                        diff3 = vert0-trace0;
 
+                        det = diff1.cross(diff2);
 
-                        Vector3d bb;
-
-                        bb(0) = diff3[0]; bb(1) = diff3[1]; bb(2) = diff3[2];
-
-                        coeff = AA.colPivHouseholderQr().solve(bb);
-
-                        coef0 = coeff(0);
-                        coef1 = coeff(1);
-
-                        if(-coef1 > 0.0 && -coef1 < 1.0)
+                        if(det.norm() > data.Tol)
                         {
-                            new_point = (trace0 + coef0*(trace1-trace0));
-                            ids_segments_to_erase.push_back(v);
-                            id_points_coordinates.push_back(new_point);
-                            id_new_points.push_back(size(id_points_coordinates) - 1);
+                            Matrix<double,3,2> AA;
 
-                            old_verts.push_back(id_points_extremes[v][0]);
-                            old_verts.push_back(id_points_extremes[v][1]);
+                            AA << diff1[0], diff2[0],
+                                  diff1[1], diff2[1],
+                                  diff1[2], diff2[2];
 
-                            id_points_extremes.push_back({old_verts[0], size(id_points_coordinates) - 1});
-                            id_points_extremes.push_back({size(id_points_coordinates) - 1, old_verts[1]});
 
-                            old_verts = {};
+                            Vector3d bb;
 
+                            bb(0) = diff3[0]; bb(1) = diff3[1]; bb(2) = diff3[2];
+
+                            coeff = AA.colPivHouseholderQr().solve(bb);
+
+                            coef0 = coeff(0);
+                            coef1 = coeff(1);
+
+                            if(-coef1 > 0.0 && -coef1 < 1.0)
+                            {
+                                new_point = (trace0 + coef0*(trace1-trace0));
+
+
+                                for(unsigned int u = 0; u != size(id_points_coordinates); u++)
+                                {
+                                    condition = abs(id_points_coordinates[u][0] - new_point[0] ) < data.Tol &&
+                                                abs(id_points_coordinates[u][1] - new_point[1] ) < data.Tol &&
+                                                abs(id_points_coordinates[u][2] - new_point[2] ) < data.Tol;
+
+                                    if(condition == true) // controllo se il punto cè già
+                                    {
+                                        ids_new_segment.push_back(u);
+                                        id_new_seg = u;
+                                        control = true;
+                                    }
+                                }
+
+                                if(control == false) // controllo se il non punto cè già
+                                {
+                                    Subpolygons[p].push_back(new_point);
+                                    id_points_coordinates.push_back(new_point);
+                                    ids_new_segment.push_back(size(id_points_coordinates) - 1);
+                                    id_new_seg = size(id_points_coordinates) - 1;
+                                }
+
+                                old_verts.push_back(id_points_extremes[v][0]);
+                                old_verts.push_back(id_points_extremes[v][1]);
+
+                                id_points_extremes.push_back({old_verts[0], id_new_seg});
+                                id_points_extremes.push_back({id_new_seg, old_verts[1]});
+
+                                id_points_extremes.erase(id_points_extremes.begin() + v);
+
+                                old_verts = {};
+
+                            }
 
                         }
-
                     }
-                }
 
-                for(int g = size(ids_segments_to_erase) - 1; g != -1; g--)
+
+
+                    id_points_extremes.push_back({ids_new_segment[0],ids_new_segment[1]});
+                    Sep_poly = {ids_new_segment[0],ids_new_segment[1]};
+
+
+                }
+                else if (data.BoolTraces_Sorted[i][j] == false)
                 {
-                    id_points_extremes.erase(id_points_extremes.begin() + ids_segments_to_erase[g]);
+
                 }
 
-                id_points_extremes.push_back({id_new_points[0],id_new_points[1]});
+                N = data.Normals[i];
+                D = diff1;
 
-            }
-            else if (data.BoolTraces_Sorted[i][j] == false)
-            {
+                for(unsigned int x = 0; x!= size(Subpolygons[p]); x++)
+                {
+                    if(abs(trace1.norm() - Subpolygons[p][x].norm() ) < data.Tol ||
+                        abs(trace0.norm() - Subpolygons[p][x].norm() ) < data.Tol)
+                    {
+                        Polygon1.push_back(Subpolygons[p][x]);
+                        Polygon2.push_back(Subpolygons[p][x]);
+                    }
+                    else
+                    {
+                        P = Subpolygons[p][x] - trace0;
+
+                        if( ((D).cross(P)).dot(N) > data.Tol)
+                        {
+                            Polygon1.push_back(Subpolygons[p][x]);
+                        }
+                        else if( ((D).cross(P)).dot(N) < data.Tol )
+                        {
+                            Polygon2.push_back(Subpolygons[p][x]);
+                        }
+                    }
+
+
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+                //cambio subpoly e new_subpoly
+
+
 
             }
         }
-        ids_segments_to_erase = {};
+
         id_points_extremes = {};
         id_new_points = {};
 
