@@ -539,9 +539,7 @@ bool SubPolygons(DFN &data)
     unsigned int id_trace;
     vector<Vector3d> id_points_coordinates;
     vector<Vector2i> id_points_extremes;
-    Vector3d vert0, vert1, trace0, trace1;
-    Vector3d diff1, diff2, diff3;
-    Vector3d det;
+    Vector3d vert0, vert1, trace0, trace1, diff1, diff2, diff3, det;
     Vector2d coeff;
     double coef0, coef1;
     Vector3d new_point;
@@ -553,13 +551,13 @@ bool SubPolygons(DFN &data)
     vector<vector<Vector3d>> Subpolygons;
     vector<vector<Vector3d>> Subpolygons_new;
     vector<unsigned int> old_verts;
-    Vector2i Sep_poly;
     Vector3d N,D,P;
-    vector<Vector3d> Polygon1;
-    vector<Vector3d> Polygon2;
+    vector<Vector3d> Polygon1, Polygon2;
+    vector<double> alfas;
+    unsigned int poly1_start, poly1_end, poly2_start, poly2_end;
 
-    for(unsigned int i=0; i!= data.N_Fractures; i++)
-    {                                                                               // ciclo su subpolygons
+    for(unsigned int i=0; i!= data.N_Fractures; i++) // Fratture
+    {
         id_points_coordinates = data.Vertices[i];
         Subpolygons.push_back(data.Vertices[i]);
 
@@ -568,20 +566,22 @@ bool SubPolygons(DFN &data)
             id_points_extremes.push_back({t,(t+1) % size(id_points_coordinates)});
         }
 
-        for(unsigned int j=0; j!= data.TracesinFigures[i]; j++)
+        // aggiungi if per quando nel poligono non ci sono intersezioni
+
+        for(unsigned int j=0; j!= data.TracesinFigures[i]; j++)  // Tracce
         {
             id_trace = data.Id_Traces_Sorted[i][j];
             trace0 = data.GeneratingPoints[id_trace][0];
             trace1 = data.GeneratingPoints[id_trace][1];
 
-            for(unsigned int p = 0; p!=size(Subpolygons) ; p++ )
+            for(unsigned int p = 0; p!=size(Subpolygons) ; p++ )  // Sottopoligoni
             {
-                if(data.BoolTraces_Sorted[i][j] == true)
+                if(data.BoolTraces_Sorted[i][j] == true) // Traccia passante
                 {
-                    for(unsigned int v = 0; v!= size(Subpolygons[p]); v++)
+                    for(unsigned int v = 0; v!= size(Subpolygons[p]); v++)  // vertici dei sottopoligoni
                     {
-                        vert0 = Subpolygons[p][id_points_extremes[v][0]];
-                        vert1 = Subpolygons[p][id_points_extremes[v][1]];
+                        vert0 = id_points_coordinates[id_points_extremes[v][0]];
+                        vert1 = id_points_coordinates[id_points_extremes[v][1]];
 
                         diff1 = trace1-trace0;
                         diff2 = vert1-vert0;
@@ -652,12 +652,54 @@ bool SubPolygons(DFN &data)
 
 
                     id_points_extremes.push_back({ids_new_segment[0],ids_new_segment[1]});
-                    Sep_poly = {ids_new_segment[0],ids_new_segment[1]};
 
 
                 }
                 else if (data.BoolTraces_Sorted[i][j] == false)
                 {
+                    for(unsigned int v = 0; v!= size(Subpolygons[p]); v++)  // vertici dei sottopoligoni
+                    {
+                        vert0 = id_points_coordinates[id_points_extremes[v][0]];
+                        vert1 = id_points_coordinates[id_points_extremes[v][1]];
+
+                        diff1 = trace1-trace0;
+                        diff2 = vert1-vert0;
+                        diff3 = vert0-trace0;
+
+                        det = diff1.cross(diff2);
+
+                        if(det.norm() > data.Tol)
+                        {
+                            Matrix<double,3,2> AA;
+
+                            AA << diff1[0], diff2[0],
+                                diff1[1], diff2[1],
+                                diff1[2], diff2[2];
+
+
+                            Vector3d bb;
+
+                            bb(0) = diff3[0]; bb(1) = diff3[1]; bb(2) = diff3[2];
+
+                            coeff = AA.colPivHouseholderQr().solve(bb);
+
+                            coef0 = coeff(0);
+                            coef1 = coeff(1);
+
+                            if((-coef1 > 0.0 && -coef1 < 1.0))
+                            {
+
+                                alfas.push_back(coef0);
+
+                                // crea il vettore di alfas per vedere se l'intervallo dei due punti delle tracce e dei du epunti delle
+                                // intersezioni sono insiemi disgiunti o meno
+
+                            }
+
+                        }
+                    }
+
+                    id_points_extremes.push_back({ids_new_segment[0],ids_new_segment[1]});
 
                 }
 
@@ -666,13 +708,8 @@ bool SubPolygons(DFN &data)
 
                 for(unsigned int x = 0; x!= size(Subpolygons[p]); x++)
                 {
-                    if(abs(trace1.norm() - Subpolygons[p][x].norm() ) < data.Tol ||
-                        abs(trace0.norm() - Subpolygons[p][x].norm() ) < data.Tol)
-                    {
-                        Polygon1.push_back(Subpolygons[p][x]);
-                        Polygon2.push_back(Subpolygons[p][x]);
-                    }
-                    else
+                    if(abs(trace1.norm() - Subpolygons[p][x].norm() ) > data.Tol ||
+                        abs(trace0.norm() - Subpolygons[p][x].norm() ) > data.Tol)
                     {
                         P = Subpolygons[p][x] - trace0;
 
@@ -680,33 +717,81 @@ bool SubPolygons(DFN &data)
                         {
                             Polygon1.push_back(Subpolygons[p][x]);
                         }
-                        else if( ((D).cross(P)).dot(N) < data.Tol )
+                        else if( ((D).cross(P)).dot(N) < -data.Tol )
                         {
                             Polygon2.push_back(Subpolygons[p][x]);
                         }
                     }
 
-
                 }
 
+                for(unsigned int y = 0; y!= size(id_points_coordinates); y++)
+                {
+                    if(id_points_coordinates[y] == Polygon1[0])
+                    {
+                        poly1_start = y;
+                    }
+                    else if(id_points_coordinates[y] == Polygon1[size(Polygon1) - 1])
+                    {
+                        poly1_end = y;
+                    }
+                    else if(id_points_coordinates[y] == Polygon2[0])
+                    {
+                        poly2_start = y;
+                    }
+                    else if(id_points_coordinates[y] == Polygon2[size(Polygon2) - 1])
+                    {
+                        poly2_end = y;
+                    }
+                }
 
+                for(unsigned int z = 0; z!= size(id_points_extremes); z++)
+                {
+                    if(id_points_extremes[z][0] == poly1_start && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]) )
+                    {
+                        Polygon1.insert(Polygon1.begin(),id_points_coordinates[id_points_extremes[z][1]]);
+                    }
+                    else if(id_points_extremes[z][1] == poly1_start && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
+                    {
+                        Polygon1.insert(Polygon1.begin(),id_points_coordinates[id_points_extremes[z][0]]);
+                    }
+                    else if(id_points_extremes[z][0] == poly2_start && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]))
+                    {
+                        Polygon2.insert(Polygon2.begin(),id_points_coordinates[id_points_extremes[z][1]]);
+                    }
+                    else if(id_points_extremes[z][1] == poly2_start && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
+                    {
+                        Polygon2.insert(Polygon2.begin(),id_points_coordinates[id_points_extremes[z][0]]);
+                    }
+                    else if(id_points_extremes[z][0] == poly1_end && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]))
+                    {
+                        Polygon1.push_back(id_points_coordinates[id_points_extremes[z][1]]);
+                    }
+                    else if(id_points_extremes[z][1] == poly1_end && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
+                    {
+                        Polygon1.push_back(id_points_coordinates[id_points_extremes[z][0]]);
+                    }
+                    else if(id_points_extremes[z][0] == poly2_end && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]))
+                    {
+                        Polygon2.push_back(id_points_coordinates[id_points_extremes[z][1]]);
+                    }
+                    else if(id_points_extremes[z][1] == poly2_end && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
+                    {
+                        Polygon2.push_back(id_points_coordinates[id_points_extremes[z][0]]);
+                    }
+                }
 
-
-
-
-
-
-
-
-
-
-                //cambio subpoly e new_subpoly
-
-
-
+                Subpolygons_new.push_back(Polygon1);
+                Subpolygons_new.push_back(Polygon2);
             }
+
+            Subpolygons = Subpolygons_new;
+            Subpolygons_new = {};
+            Polygon1 = {};
+            Polygon2 = {};
         }
 
+        Subpolygons = {};
         id_points_extremes = {};
         id_new_points = {};
 
