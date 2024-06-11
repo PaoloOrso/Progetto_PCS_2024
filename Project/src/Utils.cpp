@@ -543,18 +543,23 @@ bool SubPolygons(DFN &data)
     Vector2d coeff;
     double coef0, coef1;
     Vector3d new_point;
-    bool condition;
+    bool condition, condition0, condition1, condition2, condition3, condition4, condition5;
     bool control = false;
-    vector<unsigned int> id_new_points;
-    vector<unsigned int> ids_new_segment;
-    unsigned int id_new_seg;
-    vector<vector<Vector3d>> Subpolygons;
-    vector<vector<Vector3d>> Subpolygons_new;
-    vector<unsigned int> old_verts;
+    bool control0 = false;
+    bool control1 = false;
+    vector<int> id_new_points;
+    vector<int> ids_new_segment;
+    int id_new_seg;
+    vector<int> ids_new_segs;
+    vector<vector<Vector3d>> Subpolygons, Subpolygons_checked;
+    vector<int> ids_old_verts;
     Vector3d N,D,P;
     vector<Vector3d> Polygon1, Polygon2;
     vector<double> alfas;
-    unsigned int poly1_start, poly1_end, poly2_start, poly2_end;
+    int poly1_start, poly1_end, poly2_start, poly2_end;
+    vector<Vector3d> new_points;
+    bool new_poly;
+    vector<vector<vector<Vector3d>>> Export;
 
     for(unsigned int i=0; i!= data.N_Fractures; i++) // Fratture
     {
@@ -566,234 +571,378 @@ bool SubPolygons(DFN &data)
             id_points_extremes.push_back({t,(t+1) % size(id_points_coordinates)});
         }
 
-        // aggiungi if per quando nel poligono non ci sono intersezioni
-
-        for(unsigned int j=0; j!= data.TracesinFigures[i]; j++)  // Tracce
+        if(data.TracesinFigures[i] != 0)
         {
-            id_trace = data.Id_Traces_Sorted[i][j];
-            trace0 = data.GeneratingPoints[id_trace][0];
-            trace1 = data.GeneratingPoints[id_trace][1];
 
-            for(unsigned int p = 0; p!=size(Subpolygons) ; p++ )  // Sottopoligoni
+            for(unsigned int j=0; j!= data.TracesinFigures[i]; j++)  // Tracce
             {
-                if(data.BoolTraces_Sorted[i][j] == true) // Traccia passante
+                id_trace = data.Id_Traces_Sorted[i][j];
+                trace0 = data.GeneratingPoints[id_trace][0];
+                trace1 = data.GeneratingPoints[id_trace][1];
+
+
+                for(unsigned int p = 0; p!=size(Subpolygons) ; p++ )  // Sottopoligoni
                 {
-                    for(unsigned int v = 0; v!= size(Subpolygons[p]); v++)  // vertici dei sottopoligoni
+                    unsigned int limit = size(Subpolygons[p]);
+
+//-------------------------------------------------------------------------TRACCIA-PASSANTE---------
+
+                    if(data.BoolTraces_Sorted[i][j] == true)
                     {
-                        vert0 = id_points_coordinates[id_points_extremes[v][0]];
-                        vert1 = id_points_coordinates[id_points_extremes[v][1]];
-
-                        diff1 = trace1-trace0;
-                        diff2 = vert1-vert0;
-                        diff3 = vert0-trace0;
-
-                        det = diff1.cross(diff2);
-
-                        if(det.norm() > data.Tol)
+                        for(unsigned int v = 0; v!= limit; v++)  // vertici dei sottopoligoni
                         {
-                            Matrix<double,3,2> AA;
+                            vert0 = Subpolygons[p][v];
+                            vert1 = Subpolygons[p][ (v+1) % limit ];
 
-                            AA << diff1[0], diff2[0],
-                                  diff1[1], diff2[1],
-                                  diff1[2], diff2[2];
+                            diff1 = trace1-trace0;
+                            diff2 = vert1-vert0;
+                            diff3 = vert0-trace0;
 
+                            det = diff1.cross(diff2);
 
-                            Vector3d bb;
-
-                            bb(0) = diff3[0]; bb(1) = diff3[1]; bb(2) = diff3[2];
-
-                            coeff = AA.colPivHouseholderQr().solve(bb);
-
-                            coef0 = coeff(0);
-                            coef1 = coeff(1);
-
-                            if(-coef1 > 0.0 && -coef1 < 1.0)
+                            if(det.norm() > data.Tol)
                             {
-                                new_point = (trace0 + coef0*(trace1-trace0));
+                                Matrix<double,3,2> AA;
+
+                                AA << diff1[0], diff2[0],
+                                      diff1[1], diff2[1],
+                                      diff1[2], diff2[2];
 
 
+                                Vector3d bb;
+
+                                bb(0) = diff3[0]; bb(1) = diff3[1]; bb(2) = diff3[2];
+
+                                coeff = AA.colPivHouseholderQr().solve(bb);
+
+                                coef0 = coeff(0);
+                                coef1 = coeff(1);
+
+                                if(-coef1 > 0.0 && -coef1 < 1.0)
+                                {
+                                    new_point = (trace0 + coef0*(trace1-trace0));
+
+                                    for(unsigned int u = 0; u != size(id_points_coordinates); u++)
+                                    {
+                                        condition = abs(id_points_coordinates[u][0] - new_point[0] ) < data.Tol &&
+                                                    abs(id_points_coordinates[u][1] - new_point[1] ) < data.Tol &&
+                                                    abs(id_points_coordinates[u][2] - new_point[2] ) < data.Tol;
+
+                                        if(condition == true) // controllo se il punto cè già
+                                        {
+                                            ids_new_segment.push_back(u);
+                                            id_new_seg = u;
+                                            control = true;
+                                        }
+                                    }
+
+                                    if(control == false) // devo aggiungere il punto
+                                    {
+                                        Subpolygons[p].push_back(new_point);
+                                        id_points_coordinates.push_back(new_point);
+                                        ids_new_segment.push_back(size(id_points_coordinates) - 1);
+                                        id_new_seg = size(id_points_coordinates) - 1;
+                                    }
+
+                                    for(unsigned int u = 0; u != size(id_points_coordinates); u++)
+                                    {
+                                        condition0 = abs(id_points_coordinates[u][0] - vert0[0] ) < data.Tol &&
+                                                    abs(id_points_coordinates[u][1] - vert0[1] ) < data.Tol &&
+                                                    abs(id_points_coordinates[u][2] - vert0[2] ) < data.Tol;
+
+                                        condition1 = abs(id_points_coordinates[u][0] - vert1[0] ) < data.Tol &&
+                                                     abs(id_points_coordinates[u][1] - vert1[1] ) < data.Tol &&
+                                                     abs(id_points_coordinates[u][2] - vert1[2] ) < data.Tol;
+
+                                        if(condition0 == true)
+                                        {
+                                            ids_old_verts.push_back(u);
+                                        }
+                                        if(condition1 == true)
+                                        {
+                                            ids_old_verts.push_back(u);
+                                        }
+
+                                    }
+
+                                    id_points_extremes.push_back({ids_old_verts[0], id_new_seg});
+                                    id_points_extremes.push_back({id_new_seg, ids_old_verts[1]});
+
+                                    for(unsigned int u = 0; u!= size(id_points_extremes); u++)
+                                    {
+                                        if( (id_points_extremes[u][0] == ids_old_verts[0] && id_points_extremes[u][1] == ids_old_verts[1]) ||
+                                            (id_points_extremes[u][0] == ids_old_verts[1] && id_points_extremes[u][1] == ids_old_verts[0]) )
+                                        {
+                                            id_points_extremes.erase(id_points_extremes.begin() + u);
+                                        }
+
+                                    }
+
+                                    ids_old_verts = {};
+
+                                }
+                            }
+                        }
+
+                        id_points_extremes.push_back({ids_new_segment[0],ids_new_segment[1]});
+                        ids_new_segment = {};
+                        new_poly = true;
+
+                    }
+
+//-----------------------------------------------------------------TRACCIA-NON-PASSANTE-------------
+
+                    else if (data.BoolTraces_Sorted[i][j] == false)
+                    {
+                        for(unsigned int v = 0; v!= size(Subpolygons[p]); v++)  // vertici dei sottopoligoni
+                        {
+                            vert0 = Subpolygons[p][v];
+                            vert1 = Subpolygons[p][ (v+1) % limit ];
+
+                            diff1 = trace1-trace0;
+                            diff2 = vert1-vert0;
+                            diff3 = vert0-trace0;
+
+                            det = diff1.cross(diff2);
+
+                            if(det.norm() > data.Tol)
+                            {
+                                Matrix<double,3,2> AA;
+
+                                AA << diff1[0], diff2[0],
+                                    diff1[1], diff2[1],
+                                    diff1[2], diff2[2];
+
+
+                                Vector3d bb;
+
+                                bb(0) = diff3[0]; bb(1) = diff3[1]; bb(2) = diff3[2];
+
+                                coeff = AA.colPivHouseholderQr().solve(bb);
+
+                                coef0 = coeff(0);
+                                coef1 = coeff(1);
+
+                                if((-coef1 > 0.0 && -coef1 < 1.0))
+                                {
+                                    new_points.push_back(trace0 + coef0*(trace1-trace0));
+
+                                    for(unsigned int u = 0; u != size(id_points_coordinates); u++)
+                                    {
+                                        condition4 = abs(id_points_coordinates[u][0] - vert0[0] ) < data.Tol &&
+                                                     abs(id_points_coordinates[u][1] - vert0[1] ) < data.Tol &&
+                                                     abs(id_points_coordinates[u][2] - vert0[2] ) < data.Tol;
+
+                                        condition5 = abs(id_points_coordinates[u][0] - vert1[0] ) < data.Tol &&
+                                                     abs(id_points_coordinates[u][1] - vert1[1] ) < data.Tol &&
+                                                     abs(id_points_coordinates[u][2] - vert1[2] ) < data.Tol;
+
+                                        if(condition4 == true)
+                                        {
+                                            ids_old_verts.push_back(u);
+                                        }
+                                        if(condition5 == true)
+                                        {
+                                            ids_old_verts.push_back(u);
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+
+                        if(size(new_points)==2)
+                        {
+                            alfas.push_back(new_points[0][0] / diff1[0]);
+                            alfas.push_back(new_points[1][0] / diff1[0]);
+                        }
+
+                        if(size(alfas) == 2)
+                        {
+                            if(!((alfas[0] > 1.0 && alfas[1] > 1.0 ) || (alfas[0] < 0.0 && alfas[1] < 0.0 )) )
+                            {
                                 for(unsigned int u = 0; u != size(id_points_coordinates); u++)
                                 {
-                                    condition = abs(id_points_coordinates[u][0] - new_point[0] ) < data.Tol &&
-                                                abs(id_points_coordinates[u][1] - new_point[1] ) < data.Tol &&
-                                                abs(id_points_coordinates[u][2] - new_point[2] ) < data.Tol;
+                                    condition2 = abs(id_points_coordinates[u][0] - new_points[0][0] ) < data.Tol &&
+                                                 abs(id_points_coordinates[u][1] - new_points[0][1] ) < data.Tol &&
+                                                 abs(id_points_coordinates[u][2] - new_points[0][2] ) < data.Tol;
 
-                                    if(condition == true) // controllo se il punto cè già
+                                    condition3 = abs(id_points_coordinates[u][0] - new_points[1][0] ) < data.Tol &&
+                                                 abs(id_points_coordinates[u][1] - new_points[1][1] ) < data.Tol &&
+                                                 abs(id_points_coordinates[u][2] - new_points[1][2] ) < data.Tol;
+
+                                    if(condition2 == true) // controllo se il primo punto cè già
                                     {
                                         ids_new_segment.push_back(u);
-                                        id_new_seg = u;
-                                        control = true;
+                                        ids_new_segs.push_back(u);
+                                        control0 = true;
+                                    }
+                                    if(condition3 == true) // controllo se il secondo punto cè già
+                                    {
+                                        ids_new_segment.push_back(u);
+                                        ids_new_segs.push_back(u);
+                                        control1 = true;
                                     }
                                 }
 
-                                if(control == false) // controllo se il non punto cè già
+                                if(control0 == false) // devo aggiungere il primo punto
                                 {
-                                    Subpolygons[p].push_back(new_point);
-                                    id_points_coordinates.push_back(new_point);
+                                    Subpolygons[p].push_back(new_points[0]);
+                                    id_points_coordinates.push_back(new_points[0]);
                                     ids_new_segment.push_back(size(id_points_coordinates) - 1);
-                                    id_new_seg = size(id_points_coordinates) - 1;
+                                    ids_new_segs.push_back(size(id_points_coordinates) - 1);
+
                                 }
 
-                                old_verts.push_back(id_points_extremes[v][0]);
-                                old_verts.push_back(id_points_extremes[v][1]);
+                                if(control1 == false) // devo aggiungere il secondo punto
+                                {
+                                    Subpolygons[p].push_back(new_points[1]);
+                                    id_points_coordinates.push_back(new_points[1]);
+                                    ids_new_segment.push_back(size(id_points_coordinates) - 1);
+                                    ids_new_segs.push_back(size(id_points_coordinates) - 1);
+                                }
 
-                                id_points_extremes.push_back({old_verts[0], id_new_seg});
-                                id_points_extremes.push_back({id_new_seg, old_verts[1]});
+                                id_points_extremes.push_back({ids_old_verts[0], ids_new_segs[0]});
+                                id_points_extremes.push_back({ids_new_segs[0], ids_old_verts[1]});
+                                id_points_extremes.push_back({ids_old_verts[2], ids_new_segs[1]});
+                                id_points_extremes.push_back({ids_new_segs[1], ids_old_verts[3]});
 
-                                id_points_extremes.erase(id_points_extremes.begin() + v);
+                                for(unsigned int u = 0; u!= size(id_points_extremes); u++)
+                                {
+                                    if( (id_points_extremes[u][0] == ids_old_verts[0] && id_points_extremes[u][1] == ids_old_verts[1]) ||
+                                        (id_points_extremes[u][0] == ids_old_verts[1] && id_points_extremes[u][1] == ids_old_verts[0]) )
+                                    {
+                                        id_points_extremes.erase(id_points_extremes.begin() + u);
+                                    }
+                                    if( (id_points_extremes[u][0] == ids_old_verts[2] && id_points_extremes[u][1] == ids_old_verts[3]) ||
+                                        (id_points_extremes[u][0] == ids_old_verts[3] && id_points_extremes[u][1] == ids_old_verts[2]) )
+                                    {
+                                        id_points_extremes.erase(id_points_extremes.begin() + u);
+                                    }
+                                }
 
-                                old_verts = {};
+                                ids_old_verts = {};
+                                new_points = {};
+                                alfas = {};
 
+                                id_points_extremes.push_back({ids_new_segment[0],ids_new_segment[1]});
+
+                                new_poly = true;
                             }
-
                         }
                     }
 
+                    N = data.Normals[i];
+                    D = diff1;
 
-
-                    id_points_extremes.push_back({ids_new_segment[0],ids_new_segment[1]});
-
-
-                }
-                else if (data.BoolTraces_Sorted[i][j] == false)
-                {
-                    for(unsigned int v = 0; v!= size(Subpolygons[p]); v++)  // vertici dei sottopoligoni
+                    if(new_poly == true)
                     {
-                        vert0 = id_points_coordinates[id_points_extremes[v][0]];
-                        vert1 = id_points_coordinates[id_points_extremes[v][1]];
-
-                        diff1 = trace1-trace0;
-                        diff2 = vert1-vert0;
-                        diff3 = vert0-trace0;
-
-                        det = diff1.cross(diff2);
-
-                        if(det.norm() > data.Tol)
+                        for(unsigned int x = 0; x!= size(Subpolygons[p]); x++)
                         {
-                            Matrix<double,3,2> AA;
-
-                            AA << diff1[0], diff2[0],
-                                diff1[1], diff2[1],
-                                diff1[2], diff2[2];
-
-
-                            Vector3d bb;
-
-                            bb(0) = diff3[0]; bb(1) = diff3[1]; bb(2) = diff3[2];
-
-                            coeff = AA.colPivHouseholderQr().solve(bb);
-
-                            coef0 = coeff(0);
-                            coef1 = coeff(1);
-
-                            if((-coef1 > 0.0 && -coef1 < 1.0))
+                            if(abs(trace1.norm() - Subpolygons[p][x].norm() ) > data.Tol ||
+                                abs(trace0.norm() - Subpolygons[p][x].norm() ) > data.Tol)
                             {
+                                P = Subpolygons[p][x] - trace0;
 
-                                alfas.push_back(coef0);
-
-                                // crea il vettore di alfas per vedere se l'intervallo dei due punti delle tracce e dei du epunti delle
-                                // intersezioni sono insiemi disgiunti o meno
-
+                                if( ((D).cross(P)).dot(N) > data.Tol)
+                                {
+                                    Polygon1.push_back(Subpolygons[p][x]);
+                                }
+                                else if( ((D).cross(P)).dot(N) < -data.Tol )
+                                {
+                                    Polygon2.push_back(Subpolygons[p][x]);
+                                }
                             }
 
                         }
-                    }
 
-                    id_points_extremes.push_back({ids_new_segment[0],ids_new_segment[1]});
-
-                }
-
-                N = data.Normals[i];
-                D = diff1;
-
-                for(unsigned int x = 0; x!= size(Subpolygons[p]); x++)
-                {
-                    if(abs(trace1.norm() - Subpolygons[p][x].norm() ) > data.Tol ||
-                        abs(trace0.norm() - Subpolygons[p][x].norm() ) > data.Tol)
-                    {
-                        P = Subpolygons[p][x] - trace0;
-
-                        if( ((D).cross(P)).dot(N) > data.Tol)
+                        for(unsigned int y = 0; y!= size(id_points_coordinates); y++)
                         {
-                            Polygon1.push_back(Subpolygons[p][x]);
+                            if(id_points_coordinates[y] == Polygon1[0])
+                            {
+                                poly1_start = y;
+                            }
+                            else if(id_points_coordinates[y] == Polygon1[size(Polygon1) - 1])
+                            {
+                                poly1_end = y;
+                            }
+                            else if(id_points_coordinates[y] == Polygon2[0])
+                            {
+                                poly2_start = y;
+                            }
+                            else if(id_points_coordinates[y] == Polygon2[size(Polygon2) - 1])
+                            {
+                                poly2_end = y;
+                            }
                         }
-                        else if( ((D).cross(P)).dot(N) < -data.Tol )
+
+                        for(unsigned int z = 0; z!= size(id_points_extremes); z++)
                         {
-                            Polygon2.push_back(Subpolygons[p][x]);
+                            if(id_points_extremes[z][0] == poly1_start && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]) )
+                            {
+                                Polygon1.insert(Polygon1.begin(),id_points_coordinates[id_points_extremes[z][1]]);
+                            }
+                            else if(id_points_extremes[z][1] == poly1_start && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
+                            {
+                                Polygon1.insert(Polygon1.begin(),id_points_coordinates[id_points_extremes[z][0]]);
+                            }
+                            else if(id_points_extremes[z][0] == poly2_start && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]))
+                            {
+                                Polygon2.insert(Polygon2.begin(),id_points_coordinates[id_points_extremes[z][1]]);
+                            }
+                            else if(id_points_extremes[z][1] == poly2_start && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
+                            {
+                                Polygon2.insert(Polygon2.begin(),id_points_coordinates[id_points_extremes[z][0]]);
+                            }
+                            else if(id_points_extremes[z][0] == poly1_end && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]))
+                            {
+                                Polygon1.push_back(id_points_coordinates[id_points_extremes[z][1]]);
+                            }
+                            else if(id_points_extremes[z][1] == poly1_end && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
+                            {
+                                Polygon1.push_back(id_points_coordinates[id_points_extremes[z][0]]);
+                            }
+                            else if(id_points_extremes[z][0] == poly2_end && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]))
+                            {
+                                Polygon2.push_back(id_points_coordinates[id_points_extremes[z][1]]);
+                            }
+                            else if(id_points_extremes[z][1] == poly2_end && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
+                            {
+                                Polygon2.push_back(id_points_coordinates[id_points_extremes[z][0]]);
+                            }
                         }
+
+                        Subpolygons_checked.push_back(Polygon1);
+                        Subpolygons_checked.push_back(Polygon2);
+
                     }
+                    else if(new_poly == false)
+                    {
+                        Subpolygons_checked.push_back(Subpolygons[p]);
+                    }
+
+                    new_poly = false;
+
+                    Polygon1 = {};
+                    Polygon2 = {};
 
                 }
 
-                for(unsigned int y = 0; y!= size(id_points_coordinates); y++)
-                {
-                    if(id_points_coordinates[y] == Polygon1[0])
-                    {
-                        poly1_start = y;
-                    }
-                    else if(id_points_coordinates[y] == Polygon1[size(Polygon1) - 1])
-                    {
-                        poly1_end = y;
-                    }
-                    else if(id_points_coordinates[y] == Polygon2[0])
-                    {
-                        poly2_start = y;
-                    }
-                    else if(id_points_coordinates[y] == Polygon2[size(Polygon2) - 1])
-                    {
-                        poly2_end = y;
-                    }
-                }
+//-----------------------------FINE-CICLO-SUI-SOTTOPOLIGONI------------------------------
 
-                for(unsigned int z = 0; z!= size(id_points_extremes); z++)
-                {
-                    if(id_points_extremes[z][0] == poly1_start && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]) )
-                    {
-                        Polygon1.insert(Polygon1.begin(),id_points_coordinates[id_points_extremes[z][1]]);
-                    }
-                    else if(id_points_extremes[z][1] == poly1_start && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
-                    {
-                        Polygon1.insert(Polygon1.begin(),id_points_coordinates[id_points_extremes[z][0]]);
-                    }
-                    else if(id_points_extremes[z][0] == poly2_start && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]))
-                    {
-                        Polygon2.insert(Polygon2.begin(),id_points_coordinates[id_points_extremes[z][1]]);
-                    }
-                    else if(id_points_extremes[z][1] == poly2_start && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
-                    {
-                        Polygon2.insert(Polygon2.begin(),id_points_coordinates[id_points_extremes[z][0]]);
-                    }
-                    else if(id_points_extremes[z][0] == poly1_end && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]))
-                    {
-                        Polygon1.push_back(id_points_coordinates[id_points_extremes[z][1]]);
-                    }
-                    else if(id_points_extremes[z][1] == poly1_end && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
-                    {
-                        Polygon1.push_back(id_points_coordinates[id_points_extremes[z][0]]);
-                    }
-                    else if(id_points_extremes[z][0] == poly2_end && ( id_points_extremes[z][1] == ids_new_segment[0] || id_points_extremes[z][1] == ids_new_segment[1]))
-                    {
-                        Polygon2.push_back(id_points_coordinates[id_points_extremes[z][1]]);
-                    }
-                    else if(id_points_extremes[z][1] == poly2_end && ( id_points_extremes[z][0] == ids_new_segment[0] || id_points_extremes[z][0] == ids_new_segment[1]))
-                    {
-                        Polygon2.push_back(id_points_coordinates[id_points_extremes[z][0]]);
-                    }
-                }
+                Subpolygons = Subpolygons_checked;
+                Subpolygons_checked = {};
 
-                Subpolygons_new.push_back(Polygon1);
-                Subpolygons_new.push_back(Polygon2);
             }
 
-            Subpolygons = Subpolygons_new;
-            Subpolygons_new = {};
-            Polygon1 = {};
-            Polygon2 = {};
+            Export.push_back(Subpolygons);
+            Subpolygons = {};
+            Subpolygons_checked = {};
+            id_points_extremes = {};
+            id_new_points = {};
+
         }
 
-        Subpolygons = {};
-        id_points_extremes = {};
-        id_new_points = {};
 
     }
 
