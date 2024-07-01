@@ -36,21 +36,14 @@ struct DFN
     vector<vector<bool>> BoolTraces_Sorted;
 
 
+    vector<vector<vector<unsigned int>>> Export_Points;
+    vector<vector<Vector2i>> Export_Extremes;
+    vector<vector<Vector3d>> Export_Coordinates_Id;
 
 
-    vector<unsigned int> Number_Points; //vettore numero dei punti per ogni poligono
-    vector<vector<unsigned int>> Id_Points; //vettore di vettori degli id dei punti
-    vector<vector<Vector3d>> Id_Points_Coordinates; //vettore di vettori di coordinate dei punti
 
-    vector<unsigned int> Number_Segments; // vettore di numero di segmenti
-    vector<vector<unsigned int>> Id_Segments; // vettore di vettori degli dei segmenti
-    vector<vector<Vector2i>> Id_Points_Extremes; // vettore di vettori degli id degli estremi
 
-    vector<unsigned int> Number_Polygons; // vettore di numero di celle
-    vector<vector<unsigned int>> Id_Polygons; //vettore di vettori di id delle celle
-    vector<vector<vector<unsigned int>>> Id_Polygons_Vertices; // vettore di vettori degli id dei punti delle celle
-    vector<vector<vector<unsigned int>>> Id_Polygons_Edges;  // vettore di vettori degli id dei segmenti delle celle
-    vector<vector<unsigned int>> NumberVerticesEges;
+
 
 
 

@@ -551,6 +551,7 @@ bool SubPolygons(DFN &data)
     int id_new_seg;
     vector<int> ids_new_segs;
     vector<vector<Vector3d>> Subpolygons, Subpolygons_checked;
+    vector<vector<unsigned int>> SubpolygonsById;
     vector<int> ids_old_verts;
     Vector3d N,D,P;
     vector<Vector3d> Polygon1, Polygon2;
@@ -558,9 +559,9 @@ bool SubPolygons(DFN &data)
     int poly1_start, poly1_end, poly2_start, poly2_end;
     vector<Vector3d> new_points;
     bool new_poly;
-    vector<vector<vector<Vector3d>>> Export_points;
+    vector<vector<vector<unsigned int>>> Export_points;
     vector<vector<Vector2i>> Export_extremes;
-    vector<vector<Vector3d>> Export_cooridnates_id;
+    vector<vector<Vector3d>> Export_coordinates_id;
 
 
     for(unsigned int i=0; i!= data.N_Fractures; i++) // Fratture
@@ -940,9 +941,23 @@ bool SubPolygons(DFN &data)
 
             }
 
-            Export_points.push_back(Subpolygons);
+            for (const auto& subpolygon : Subpolygons)
+            {
+                vector<unsigned int> subpolygonById;
+                for (const auto& point : subpolygon) {
+                    for (unsigned int i = 0; i < id_points_coordinates.size(); ++i) {
+                        if (point == id_points_coordinates[i]) {
+                            subpolygonById.push_back(i);
+                            break;
+                        }
+                    }
+                }
+                SubpolygonsById.push_back(subpolygonById);
+            }
+
+            Export_points.push_back(SubpolygonsById);
             Export_extremes.push_back(id_points_extremes);
-            Export_cooridnates_id.push_back(id_points_coordinates);
+            Export_coordinates_id.push_back(id_points_coordinates);
             Subpolygons = {};
             Subpolygons_checked = {};
             id_points_extremes = {};
@@ -951,14 +966,32 @@ bool SubPolygons(DFN &data)
         }
         else
         {
-            Export_points.push_back(Subpolygons);
+            for (const auto& subpolygon : Subpolygons)
+            {
+                vector<unsigned int> subpolygonById;
+                for (const auto& point : subpolygon) {
+                    for (unsigned int i = 0; i < id_points_coordinates.size(); ++i) {
+                        if (point == id_points_coordinates[i]) {
+                            subpolygonById.push_back(i);
+                            break;
+                        }
+                    }
+                }
+                SubpolygonsById.push_back(subpolygonById);
+            }
+
+            Export_points.push_back(SubpolygonsById);
             Export_extremes.push_back(id_points_extremes);
-            Export_cooridnates_id.push_back(id_points_coordinates);
+            Export_coordinates_id.push_back(id_points_coordinates);
         }
 
         Subpolygons = {};
 
     }
+
+    data.Export_Points = Export_points;
+    data.Export_Extremes = Export_extremes;
+    data.Export_Coordinates_Id = Export_coordinates_id;
 
     return true;
 
