@@ -962,6 +962,7 @@ bool SubPolygons(DFN &data)
             Subpolygons_checked = {};
             id_points_extremes = {};
             id_new_points = {};
+            SubpolygonsById = {};
 
         }
         else
@@ -986,6 +987,8 @@ bool SubPolygons(DFN &data)
         }
 
         Subpolygons = {};
+        SubpolygonsById = {};
+
 
     }
 
