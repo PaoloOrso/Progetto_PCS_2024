@@ -70,6 +70,9 @@ bool ImportAll(const string &filename, DFN &data)
     string line;
     unsigned int NFractures = 0;
     istringstream convertN(line);
+    unsigned int id, vertices;
+    char tmp;
+    double coordx, coordy, coordz;
 
     getline(file, line);
     getline(file, line);
@@ -81,12 +84,6 @@ bool ImportAll(const string &filename, DFN &data)
     for(unsigned int i = 0; i != NFractures; i++)
     {
         istringstream convertN(line);
-
-        unsigned int id, vertices;
-
-        char tmp;
-
-        double coordx, coordy, coordz;
 
         vector<double> coordinatesx, coordinatesy, coordinatesz;
 
@@ -142,10 +139,12 @@ bool ImportAll(const string &filename, DFN &data)
             vert = {};
         }
 
-        data.MaxId = id;
         data.Vertices.push_back(Vertices);
         getline(file, line);
     }
+
+    data.MaxId = id;
+
 
     return true;
 }
@@ -559,20 +558,22 @@ bool SubPolygons(DFN &data)
     int poly1_start, poly1_end, poly2_start, poly2_end;
     vector<Vector3d> new_points;
     bool new_poly;
-    vector<vector<vector<Vector3d>>> Export;
+    vector<vector<vector<Vector3d>>> Export_points;
+    vector<vector<Vector2i>> Export_extremes;
+    vector<vector<Vector3d>> Export_cooridnates_id;
+
 
     for(unsigned int i=0; i!= data.N_Fractures; i++) // Fratture
     {
         id_points_coordinates = data.Vertices[i];
         Subpolygons.push_back(data.Vertices[i]);
 
-        for(unsigned int t=0; t != size(id_points_coordinates); t++)
-        {
-            id_points_extremes.push_back({t,(t+1) % size(id_points_coordinates)});
-        }
-
         if(data.TracesinFigures[i] != 0)
         {
+            for(unsigned int t=0; t != size(id_points_coordinates); t++)
+            {
+                id_points_extremes.push_back({t,(t+1) % size(id_points_coordinates)});
+            }
 
             for(unsigned int j=0; j!= data.TracesinFigures[i]; j++)  // Tracce
             {
@@ -821,15 +822,19 @@ bool SubPolygons(DFN &data)
                                     }
                                 }
 
-                                ids_old_verts = {};
-                                new_points = {};
-                                alfas = {};
 
                                 id_points_extremes.push_back({ids_new_segment[0],ids_new_segment[1]});
 
                                 new_poly = true;
                             }
                         }
+
+                        new_points = {};
+                        ids_old_verts = {};
+                        alfas = {};
+                        ids_new_segs = {};
+                        ids_new_segment = {};
+
                     }
 
                     N = data.Normals[i];
@@ -935,14 +940,23 @@ bool SubPolygons(DFN &data)
 
             }
 
-            Export.push_back(Subpolygons);
+            Export_points.push_back(Subpolygons);
+            Export_extremes.push_back(id_points_extremes);
+            Export_cooridnates_id.push_back(id_points_coordinates);
             Subpolygons = {};
             Subpolygons_checked = {};
             id_points_extremes = {};
             id_new_points = {};
 
         }
+        else
+        {
+            Export_points.push_back(Subpolygons);
+            Export_extremes.push_back(id_points_extremes);
+            Export_cooridnates_id.push_back(id_points_coordinates);
+        }
 
+        Subpolygons = {};
 
     }
 
